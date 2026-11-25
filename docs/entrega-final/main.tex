@@ -1,151 +1,650 @@
-\documentclass[11pt,a4paper]{article}
+\documentclass[11pt]{article}
 
+% --- Codificación e idioma ---
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
-\usepackage[spanish,es-nodecimaldot]{babel}
-\usepackage{amsmath,amssymb}
-\usepackage[margin=2.5cm]{geometry}
-\usepackage{microtype}
-\usepackage{booktabs,tabularx,float}
+\usepackage[spanish,english]{babel}
+
+% --- Matemáticas ---
+\usepackage{amsmath,amsthm,amssymb}
+
+% --- Tablas y formato ---
+\usepackage{float}
+\usepackage{booktabs}
+\usepackage[normalem]{ulem}
+\usepackage[a4paper,margin=2.5cm]{geometry}
 \usepackage[hidelinks]{hyperref}
-
-\setcounter{tocdepth}{1}
-\numberwithin{table}{section}
 \newcommand{\repo}{\href{https://github.com/Segiraldo0610/ProyectoFinal_Algoritmos}{ProyectoFinal\_Algoritmos}}
-\newcommand{\materia}{\operatorname{asignatura}}
-\newcommand{\cupo}{\operatorname{capacidad}}
-\newcommand{\horario}{\operatorname{horario}}
 
-\title{Algoritmo de asignación de horarios estudiantiles\\[0.35em]
-\large Entrega final de Análisis de Algoritmos}
+% --- Numeración ---
+\numberwithin{equation}{section}
+\numberwithin{figure}{section}
+\numberwithin{table}{section}
+
+% --- Entornos ---
+\theoremstyle{definition}
+\newtheorem*{definition}{Definición}
+\newtheorem*{restriccion}{Restricción}
+
+% --- Nombres en español ---
+\addto\shorthandsspanish{\spanishdeactivate{~<>}}
+
+\title{Algoritmo de asignación de horarios estudiantiles\\
+\large Entrega final: Implementación y sustentación}
 \author{Cesar Santiago Canro Cabra \and Samuel Enrique Giraldo Sabogal}
-\date{Pontificia Universidad Javeriana\\
-Departamento de Ingeniería de Sistemas\\[0.4em]
-Proyecto 2026--30}
+\date{\today}
 
 \begin{document}
+\selectlanguage{spanish}
+
 \maketitle
 
 \begin{abstract}
-Se presenta la implementación de un algoritmo para asignar horarios
-estudiantiles a partir de solicitudes, grupos y cupos. La solución construye
-dos asignaciones iniciales, revisa las solicitudes que quedaron pendientes
-e intenta incorporarlas mediante cambios de sección. Un verificador
-independiente comprueba el cumplimiento de las restricciones. La estrategia
-de datos utiliza archivos CSV enlazados por identificadores y permite
-reproducir los experimentos a partir de una semilla. La evaluación compara
-los resultados con una línea base voraz en nueve instancias sintéticas y
-con una búsqueda exhaustiva en casos pequeños. La interfaz de escritorio
-permite consultar los datos, ejecutar la asignación y revisar sus resultados
-durante la sustentación.
+En este documento se presenta el análisis y el diseño formal del problema de
+asignación de horarios estudiantiles en la Pontificia Universidad Javeriana,
+así como la estrategia de datos propuesta para probar y evaluar el algoritmo
+de solución. Se formalizan las entradas, las precondiciones, las restricciones
+de validez, las preferencias de los estudiantes y la salida esperada.
+A partir de esta definición se describe la implementación del algoritmo
+de asignación, se evalúan sus resultados en escenarios reproducibles y se
+presenta la interfaz utilizada para la sustentación.
 \end{abstract}
 
 \tableofcontents
-\clearpage
+\newpage
 
-\part{Análisis y diseño}
+\part{Definición formal del problema}
 
 \section{Análisis del problema}
 
-La asignación de horarios consiste en seleccionar, para cada estudiante,
-los grupos correspondientes a las asignaturas que solicita. Una sección
-puede tener varias sesiones durante la semana, y dos estudiantes pueden
-competir por el mismo cupo. La decisión de asignar un grupo afecta tanto
-las franjas disponibles del estudiante como los cupos que podrán utilizar
-los demás.
+Se dispone de un conjunto de estudiantes que deben construir su horario
+académico a partir de las asignaturas que desean cursar. Cada asignatura puede
+ofrecer uno o varios grupos, y cada grupo se encuentra caracterizado por un
+profesor, una o varias franjas horarias, un salón y una capacidad máxima de
+estudiantes.
 
-Se distinguen las restricciones de validez y los criterios de calidad.
-Un horario debe respetar los cupos, evitar cruces y contener a lo sumo un
-grupo de cada asignatura solicitada. Entre los horarios válidos interesa
-atender tantas solicitudes como sea posible, dar prioridad a las materias
-consideradas más importantes y tener en cuenta las preferencias de cada
-estudiante. Los criterios de calidad incluyen la franja deseada, la
-compactación del horario, la distancia entre salones, la preferencia por
-profesor y la coincidencia con compañeros.
-
-En algunas instancias, el número de cupos o la combinación de franjas impide
-atender todas las solicitudes. En ese caso, la salida conserva las
-asignaciones válidas e identifica las materias pendientes.
-
-\section{Diseño formal}
-
-\subsection{Entrada y precondiciones}
-
-Sean \(E\) el conjunto de estudiantes, \(A\) el catálogo de asignaturas,
-\(G\) el conjunto de grupos, \(P\) el catálogo de profesores y \(S\) el
-conjunto de salones. Para un estudiante \(e\in E\), \(R_e\subseteq A\)
-contiene las asignaturas que solicita. Cada par \((e,a)\) con \(a\in R_e\)
-tiene una prioridad entera positiva \(\pi(e,a)\).
-
-Cada grupo \(g\in G\) tiene una asignatura \(\materia(g)\in A\), un profesor
-en \(P\), un salón en \(S\), un cupo \(\cupo(g)>0\) y un conjunto no vacío
-de sesiones \(\horario(g)\). Cada sesión se representa por una terna
-\(f=(d,i,j)\), donde \(d\in\{1,\ldots,5\}\) indica el día y
-\(0\le i<j\le 1440\) son minutos desde la medianoche. Los intervalos son
-semiabiertos. Para \(f=(d,i,j)\) y \(f'=(d',i',j')\), se define
-\[
-  \operatorname{cruce}(f,f')\iff d=d'\ \land\ i<j'\ \land\ i'<j .
-\]
-Así, una clase que termina a las 09:00 puede preceder a otra que comienza a
-esa misma hora. Un grupo tiene el mismo salón y profesor para sus sesiones.
-
-Las preferencias expresan una ventana de horas, días libres deseados, una
-indicación de compactación, valoraciones por profesor entre 0 y 5 y una
-lista de compañeros preferidos. La distancia entre dos salones se registra
-en metros. La matriz de distancias tiene valores enteros no negativos,
-es simétrica y su diagonal es cero. La carga exige identificadores únicos
-en sus catálogos, referencias existentes y al menos una solicitud por
-estudiante. La oferta puede carecer de secciones para una asignatura del
-catálogo.
-
-\subsection{Salida y postcondiciones}
-
-La salida es una función \(H:E\longrightarrow 2^G\). El conjunto \(H(e)\)
-contiene los grupos asignados a \(e\) y puede ser vacío. Se exige que \(H\)
-cumpla las siguientes condiciones.
+El problema consiste en determinar, para cada estudiante, qué grupos deben ser
+asignados de manera que el horario resultante sea válido. Una asignación se
+considera válida cuando cumple simultáneamente las siguientes condiciones:
 
 \begin{enumerate}
-  \item \textbf{Solicitud.} Para cada \(e\) y cada \(g\in H(e)\),
-        \(\materia(g)\in R_e\).
-  \item \textbf{Unicidad.} Para cada \(e\), dos grupos distintos de
-        \(H(e)\) corresponden a asignaturas diferentes.
-  \item \textbf{Compatibilidad.} Para cada \(e\), las sesiones de dos
-        grupos distintos de \(H(e)\) no se cruzan.
-  \item \textbf{Cupo.} Para cada \(g\in G\),
-        \(\left|\{e\in E:g\in H(e)\}\right|\le \cupo(g)\).
+  \item un estudiante no puede estar asignado a dos grupos cuyas franjas
+        horarias se intersecten;
+  \item un estudiante puede pertenecer, como máximo, a un grupo por cada
+        asignatura solicitada;
+  \item la cantidad de estudiantes asignados a un grupo no puede superar la
+        capacidad máxima de dicho grupo;
+  \item un estudiante solamente puede ser asignado a grupos correspondientes
+        a asignaturas que haya solicitado.
 \end{enumerate}
 
-Las materias pendientes de \(e\) son
-\(R_e\setminus\{\materia(g):g\in H(e)\}\).
-La cobertura individual es \(|H(e)|/|R_e|\) y la cobertura global es
-\(\sum_{e\in E}|H(e)|/\sum_{e\in E}|R_e|\). La condición de unicidad
-permite contar solicitudes cubiertas mediante el número de grupos.
+Satisfacer estas restricciones determina la \emph{validez} de una asignación,
+pero no necesariamente una única solución. Para un mismo estudiante pueden
+existir varios horarios válidos. Por esta razón, además de garantizar la
+validez, se desea contar con información que permita evaluar la calidad del
+horario obtenido.
 
-\subsection{Criterio de comparación}
+Los principales criterios de calidad considerados son la prioridad de las
+asignaturas, la preferencia por determinados profesores, la organización del
+tiempo libre, la cercanía entre salones de clases consecutivas y la posibilidad
+de coincidir con determinados compañeros.
 
-Las asignaciones válidas se comparan en orden lexicográfico mediante
+Por tanto, en el problema se distinguen dos tipos de condiciones:
+
+\begin{itemize}
+  \item \textbf{Restricciones de validez:} condiciones obligatorias que todo
+        horario generado debe satisfacer.
+  \item \textbf{Criterios de calidad:} características que permiten evaluar y
+        comparar horarios que ya son válidos.
+\end{itemize}
+
+El problema puede resumirse como la búsqueda de una asignación de grupos para
+cada estudiante que produzca horarios válidos y cuya calidad pueda ser
+evaluada mediante las prioridades y preferencias recibidas como entrada.
+El análisis determina qué representa una solución correcta y qué información
+resulta relevante para evaluarla. El procedimiento para obtenerla se describe
+en la parte de implementación.
+
+\section{Diseño del problema}
+
+El diseño establece el contrato formal del problema con independencia del
+algoritmo que posteriormente se utilice. Dicho contrato se organiza en cuatro
+componentes:
+
+\begin{enumerate}
+  \item \textbf{Entradas:} estudiantes, asignaturas, grupos, profesores,
+        salones, franjas horarias, solicitudes, prioridades y preferencias.
+  \item \textbf{Precondiciones:} propiedades que deben satisfacer los datos
+        recibidos antes de realizar la asignación.
+  \item \textbf{Salida:} función que asocia a cada estudiante el conjunto de
+        grupos que conforma su horario.
+  \item \textbf{Postcondiciones:} restricciones que debe cumplir la salida
+        para ser considerada válida.
+\end{enumerate}
+
+Una vez verificada la validez de la salida, se calculan métricas de calidad que
+permiten comparar distintas asignaciones válidas. Las secciones siguientes
+desarrollan cada componente del contrato.
+
+\section{Especificación formal de las entradas}
+
+\subsection{Conjuntos}
+
+Se definen los siguientes conjuntos finitos:
+
+\begin{itemize}
+  \item $E = \{e_1,e_2,\ldots,e_n\}$: conjunto de estudiantes.
+  \item $A = \{a_1,a_2,\ldots,a_m\}$: conjunto de asignaturas disponibles.
+  \item $G = \{g_1,g_2,\ldots,g_k\}$: conjunto de grupos o secciones.
+  \item $P = \{p_1,p_2,\ldots,p_r\}$: conjunto de profesores.
+  \item $S = \{s_1,s_2,\ldots,s_q\}$: conjunto de salones.
+  \item $D = \{1,2,3,4,5\}$: conjunto ordenado de días académicos de la
+        semana.
+  \item $T$: conjunto ordenado de instantes de tiempo considerados durante
+        un día académico.
+  \item $F = \{f_1,f_2,\ldots,f_t\}$: conjunto de franjas horarias
+        disponibles durante la semana.
+\end{itemize}
+
+Cada franja $f\in F$ se representa mediante una terna:
+
 \[
-  F(H)=\bigl(N(H),W(H),Q(H)\bigr), \qquad
-  N(H)=\sum_{e\in E}|H(e)|,\qquad
-  W(H)=\sum_{e\in E}\ \sum_{g\in H(e)} \pi(e,\materia(g)).
+f=\bigl(d(f),t_{\mathrm{inicio}}(f),t_{\mathrm{fin}}(f)\bigr)
+\in D\times T\times T,
 \]
-Se compara primero la cantidad de solicitudes atendidas. Si hay empate,
-se compara la suma de prioridades. El puntaje de preferencias \(Q\)
-decide cuando los dos primeros componentes coinciden.
+con $t_{\mathrm{inicio}}(f)<t_{\mathrm{fin}}(f)$. Esta representación permite
+ordenar temporalmente las clases, calcular los tiempos libres y determinar
+cuándo dos franjas se superponen.
 
-El puntaje \(Q\) es la suma de puntajes individuales. Para cada estudiante
-se suman 60 puntos por unidad de preferencia de profesor asignado y 120 por
-cada coincidencia dirigida de compañero y grupo. Se resta un punto por
-minuto de clase fuera de la ventana deseada y 120 por cada sesión en un
-día libre preferido. Si el estudiante prefiere un horario compacto, se
-resta un punto por minuto de hueco. También se descuenta la parte entera
-de la distancia total recorrida dividida entre diez. Los huecos y
-desplazamientos se calculan entre sesiones consecutivas del mismo día.
+Se define la relación de solapamiento $\bowtie$ sobre $F$. Para
+$f_i,f_j\in F$:
 
+\[
+f_i\bowtie f_j
+\iff
+d(f_i)=d(f_j)
+\land
+t_{\mathrm{inicio}}(f_i)<t_{\mathrm{fin}}(f_j)
+\land
+t_{\mathrm{inicio}}(f_j)<t_{\mathrm{fin}}(f_i).
+\]
+
+Dos clases son consecutivas cuando ocurren el mismo día, no existe otra clase
+asignada entre ellas y la hora de inicio de la segunda no es anterior a la
+hora de finalización de la primera. Esta relación se utilizará posteriormente
+para calcular tiempos libres y distancias entre salones consecutivos.
+
+\subsection{Funciones sobre los grupos}
+
+Cada grupo $g\in G$ pertenece exactamente a una asignatura. Se definen las
+siguientes funciones:
+
+\[
+\begin{aligned}
+  \operatorname{asignatura} &: G \rightarrow A,\\
+  \operatorname{profesor}   &: G \rightarrow P,\\
+  \operatorname{horario}    &: G \rightarrow 2^F,\\
+  \operatorname{salon}      &: G \rightarrow S,\\
+  \operatorname{capacidad}  &: G \rightarrow \mathbb{N}.
+\end{aligned}
+\]
+
+Para cada grupo $g$, $\operatorname{asignatura}(g)$ indica la asignatura a la
+que pertenece; $\operatorname{profesor}(g)$, el profesor encargado;
+$\operatorname{horario}(g)$, el conjunto de franjas que ocupa;
+$\operatorname{salon}(g)$, el salón donde se desarrolla; y
+$\operatorname{capacidad}(g)$, el número máximo de estudiantes que puede
+recibir.
+
+\subsection{Información de los estudiantes}
+
+Para cada estudiante $e\in E$ se define el conjunto de asignaturas solicitadas:
+
+\[
+\operatorname{Solicitudes}(e)\subseteq A.
+\]
+
+También se define la función de prioridad:
+
+\[
+\operatorname{prioridad}:E\times A\rightarrow\{1,2,\ldots,K\},
+\]
+
+donde $\operatorname{prioridad}(e,a)$ representa la importancia que tiene para
+el estudiante $e$ cursar la asignatura $a$. Un valor mayor indica una prioridad
+mayor.
+
+\subsection{Información de los grupos}
+
+Para cada grupo $g\in G$ se conoce:
+
+\[
+\operatorname{asignatura}(g)\in A,\quad
+\operatorname{profesor}(g)\in P,\quad
+\operatorname{horario}(g)\subseteq F,
+\]
+
+\[
+\operatorname{salon}(g)\in S,\qquad
+\operatorname{capacidad}(g)\in\mathbb{N}.
+\]
+
+\section{Preferencias de los estudiantes}
+
+\subsection{Preferencia por profesor}
+
+Se define la función:
+
+\[
+\operatorname{preferenciaProfesor}:E\times P
+\rightarrow\{0,1,2,3,4,5\},
+\]
+
+donde $\operatorname{preferenciaProfesor}(e,p)$ representa el nivel de
+preferencia del estudiante $e$ por recibir clase con el profesor $p$, según la
+siguiente escala:
+
+\begin{table}[H]
+\centering
+\caption{Escala de preferencia por profesor.}
+\begin{tabular}{cl}
+\toprule
+\textbf{Valor} & \textbf{Significado} \\
+\midrule
+0 & Sin preferencia o profesor desconocido \\
+1 & Preferencia muy baja \\
+2 & Preferencia baja \\
+3 & Preferencia media \\
+4 & Preferencia alta \\
+5 & Preferencia muy alta \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Preferencias de horario}
+
+Para cada estudiante $e\in E$ se define:
+
+\[
+\operatorname{PreferenciasHorario}(e)=
+\left(h_{\min}(e),h_{\max}(e),c(e),l(e)\right),
+\]
+
+donde:
+
+\begin{itemize}
+  \item $h_{\min}(e)\in T$ es la hora mínima deseada para iniciar clases;
+  \item $h_{\max}(e)\in T$ es la hora máxima deseada para terminar clases;
+  \item $c(e)\in\{0,1\}$ expresa la preferencia por un horario compacto
+        ($1$ si prefiere evitar huecos y $0$ en caso contrario);
+  \item $l(e)\subseteq D$ es el conjunto de días de la semana en
+        los que el estudiante prefiere no tener clases.
+\end{itemize}
+
+\subsection{Cercanía entre salones}
+
+Se define la función:
+
+\[
+\operatorname{distancia}:S\times S\rightarrow\mathbb{R}_{\geq 0},
+\]
+
+donde $\operatorname{distancia}(s_i,s_j)$ representa la distancia física en
+metros entre los salones $s_i$ y $s_j$. Para una instancia real se pueden
+utilizar mediciones del campus de la Pontificia Universidad Javeriana.
+En los experimentos se utilizan distancias sintéticas.
+
+\subsection{Preferencias sociales y académicas}
+
+Para cada estudiante $e\in E$ se define:
+
+\[
+\operatorname{Compañeros}(e)\subseteq E\setminus\{e\},
+\]
+
+que representa el conjunto de estudiantes con los cuales $e$ preferiría
+coincidir en uno o más grupos.
+
+\section{Precondiciones}
+
+Las entradas deben satisfacer las siguientes propiedades antes de ejecutar
+cualquier algoritmo de asignación:
+
+\begin{enumerate}
+  \item Los conjuntos $E$, $A$, $G$, $P$, $S$, $D$, $T$ y $F$ son finitos.
+  \item Para toda franja $f\in F$:
+        \[
+        d(f)\in D,\qquad
+        t_{\mathrm{inicio}}(f),t_{\mathrm{fin}}(f)\in T,
+        \]
+        \[
+        t_{\mathrm{inicio}}(f)<t_{\mathrm{fin}}(f).
+        \]
+  \item Para todo $g\in G$:
+        \[
+        \operatorname{asignatura}(g)\in A,\quad
+        \operatorname{profesor}(g)\in P,\quad
+        \operatorname{horario}(g)\subseteq F,
+        \]
+        \[
+        \operatorname{salon}(g)\in S,\qquad
+        \operatorname{capacidad}(g)>0.
+        \]
+  \item Para todo $e\in E$:
+        \[
+        \emptyset\neq\operatorname{Solicitudes}(e)\subseteq A.
+        \]
+  \item Para todo par $s_i,s_j\in S$:
+        \[
+        \operatorname{distancia}(s_i,s_j)\geq 0,
+        \]
+        \[
+        \operatorname{distancia}(s_i,s_i)=0,
+        \]
+        \[
+        \operatorname{distancia}(s_i,s_j)
+        =\operatorname{distancia}(s_j,s_i).
+        \]
+  \item Para todo $e\in E$:
+        \[
+        \operatorname{Compañeros}(e)\subseteq E\setminus\{e\}.
+        \]
+\end{enumerate}
+
+\section{Salida formal y postcondiciones}
+
+La salida principal del problema es la función:
+
+\[
+H:E\rightarrow 2^G,
+\]
+
+donde $H(e)$ representa el conjunto de grupos asignados al estudiante $e$.
+La salida completa puede expresarse como:
+
+\[
+H=\left\{\bigl(e,H(e)\bigr)\mid e\in E\right\}.
+\]
+
+Cada conjunto $H(e)$ debe cumplir las siguientes postcondiciones.
+
+\begin{restriccion}[Asignación de asignaturas solicitadas]
+Para todo estudiante $e\in E$ y todo grupo $g\in H(e)$:
+\[
+\operatorname{asignatura}(g)\in\operatorname{Solicitudes}(e).
+\]
+\end{restriccion}
+
+\begin{restriccion}[Ausencia de cruces de horario]
+Para todo estudiante $e\in E$, todo par de grupos distintos
+$g_i,g_j\in H(e)$ y toda pareja de franjas
+$f_i\in\operatorname{horario}(g_i)$,
+$f_j\in\operatorname{horario}(g_j)$:
+\[
+\neg\bigl(f_i\bowtie f_j\bigr).
+\]
+\end{restriccion}
+
+\begin{restriccion}[Una sola sección por asignatura]
+Para todo estudiante $e\in E$ y todo par de grupos distintos
+$g_i,g_j\in H(e)$:
+\[
+\operatorname{asignatura}(g_i)\neq\operatorname{asignatura}(g_j).
+\]
+\end{restriccion}
+
+\begin{restriccion}[Respeto de la capacidad]
+Para todo grupo $g\in G$:
+\[
+\left|\{e\in E\mid g\in H(e)\}\right|
+\leq\operatorname{capacidad}(g).
+\]
+\end{restriccion}
+
+\section{Métricas de calidad}
+
+Una vez comprobado que $H$ satisface las postcondiciones, se asocia a cada
+estudiante un vector de métricas:
+
+\[
+M_e=\left(m_1(e),m_2(e),\ldots,m_z(e)\right).
+\]
+
+La salida extendida se define como:
+
+\[
+\operatorname{Resultado}(e)=\bigl(H(e),M_e\bigr).
+\]
+
+Las métricas pueden incluir:
+
+\begin{itemize}
+  \item número de asignaturas solicitadas y asignadas;
+  \item satisfacción de las asignaturas de mayor prioridad;
+  \item cantidad total de horas libres entre clases;
+  \item distancia total recorrida entre clases consecutivas;
+  \item satisfacción promedio con los profesores asignados;
+  \item coincidencias con compañeros preferidos.
+\end{itemize}
+
+Para formalizar la cobertura, se define primero el conjunto de asignaturas
+asignadas al estudiante $e$:
+
+\[
+\operatorname{Asignadas}(e)=
+\left\{a\in\operatorname{Solicitudes}(e)\,\middle|\,
+\exists g\in H(e):\operatorname{asignatura}(g)=a\right\}.
+\]
+
+La cobertura individual es:
+
+\[
+\operatorname{Cobertura}(e)=
+\frac{|\operatorname{Asignadas}(e)|}
+     {|\operatorname{Solicitudes}(e)|}.
+\]
+
+La cobertura global es:
+
+\[
+\operatorname{CoberturaGlobal}=
+\frac{\displaystyle\sum_{e\in E}|\operatorname{Asignadas}(e)|}
+     {\displaystyle\sum_{e\in E}|\operatorname{Solicitudes}(e)|}.
+\]
+
+Estas métricas permiten comparar asignaciones válidas. El orden en que se
+utilizan para elegir entre dos resultados se establece en la
+Sección~\ref{sec:criterio-final}.
+
+\subsection{Ejemplo conceptual de salida}
+
+\begin{table}[H]
+\centering
+\caption{Ejemplo de horario asignado al estudiante $e_1$.}
+\begin{tabular}{ll}
+\toprule
+\textbf{Asignatura} & \textbf{Grupo asignado} \\
+\midrule
+Análisis de Algoritmos & G03 \\
+Bases de Datos         & G07 \\
+Computación Móvil      & G11 \\
+Optimización           & G15 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Métricas del horario asignado al estudiante $e_1$.}
+\begin{tabular}{lr}
+\toprule
+\textbf{Métrica} & \textbf{Valor} \\
+\midrule
+Materias solicitadas        & 4 \\
+Materias asignadas          & 4 \\
+Cruces de horario           & 0 \\
+Tiempo libre total          & 6 horas \\
+Distancia total recorrida   & 850 metros \\
+Satisfacción con profesores & 4.25 / 5 \\
+Prioridades satisfechas     & 100\% \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \part{Estrategia de datos}
 
-\section{Formato de almacenamiento CSV}
+\section{Generación de datos sintéticos}
+
+El generador de datos sintéticos se controla mediante los siguientes
+parámetros:
+
+\begin{itemize}
+  \item número de estudiantes;
+  \item número de asignaturas;
+  \item número de grupos por asignatura;
+  \item número de profesores;
+  \item número de salones;
+  \item número de franjas horarias;
+  \item capacidad promedio de los grupos.
+\end{itemize}
+
+A partir de estos parámetros se generan estudiantes, asignaturas, grupos,
+profesores, horarios, salones, capacidades, prioridades, preferencias y
+relaciones entre estudiantes. La generación parte de una semilla. En los
+experimentos se utilizaron las semillas 202630, 202631 y 202632.
+
+El generador crea primero los catálogos y los grupos. Cada grupo tiene
+una o dos sesiones en días distintos, con duraciones de 60, 90 o 120
+minutos. Los inicios se eligen entre las 08:00 y las 16:00 en pasos de
+30 minutos. Si $R$ es el total de solicitudes, el cupo base se calcula
+como $b=\max(1,\lfloor 0{,}8R/|G|\rfloor)$. Para cada grupo se aplica
+una variación de hasta $\lfloor b/3\rfloor$, con cupo mínimo de uno.
+
+Cada estudiante recibe un conjunto de asignaturas solicitadas sin
+duplicados. Se usan pesos distintos para simular una demanda desigual
+y se asigna una prioridad de 1 a 5 a cada solicitud. Las distancias
+sintéticas se obtienen a partir de coordenadas enteras de los salones
+y se registran en metros.
+
+\section{Generación de salidas esperadas}
+
+La estrategia de pruebas debe incluir no solamente los datos de entrada, sino
+también resultados de referencia que permitan determinar si la salida de una
+implementación es correcta. Debido a que un mismo caso puede admitir múltiples
+horarios válidos, una salida esperada no se limita necesariamente a una única
+asignación exacta.
+
+Para cada caso de prueba se almacenarán:
+
+\begin{itemize}
+  \item los datos de entrada del caso;
+  \item una o más asignaciones válidas de referencia, cuando sea posible
+        determinarlas;
+  \item los valores esperados de las métricas de cobertura y calidad;
+  \item las propiedades de validez que toda salida aceptable debe satisfacer;
+  \item la indicación de si el caso admite o no una asignación completa.
+\end{itemize}
+
+En los casos pequeños, las salidas de referencia se comprueban mediante
+revisión manual y enumeración exhaustiva. La enumeración permite verificar
+si existe una asignación completa y calcular el mejor resultado según el
+criterio de comparación.
+
+También se podrán construir casos con una \emph{solución sembrada}. Para ello,
+primero se define una asignación de referencia $H^{*}$ y después se generan las
+solicitudes, capacidades y franjas horarias de forma que $H^{*}$ satisfaga las
+postcondiciones. A continuación pueden introducirse conflictos controlados,
+como grupos con cupos reducidos o franjas solapadas. Cada caso se verifica
+de forma independiente para conservar las propiedades esperadas.
+
+Las salidas producidas por cualquier implementación serán evaluadas mediante
+un verificador independiente. Este comprobará las cuatro postcondiciones,
+recalculará las métricas y comparará sus valores con los resultados de
+referencia. En escenarios medianos y grandes, donde enumerar todas las
+soluciones no es viable, la salida esperada se expresará mediante condiciones
+verificables, cotas conocidas y soluciones base, en lugar de exigir que el
+algoritmo reproduzca exactamente un horario particular.
+
+El archivo \texttt{salidas\_esperadas.json} registra, para cada caso,
+la terna esperada de los métodos base, propuesto y exacto. También
+indica si se pueden atender todas las solicitudes.
+
+\section{Escenarios de prueba}
+
+\subsection{Escenario pequeño}
+
+\begin{itemize}
+  \item 5 estudiantes.
+  \item 5 asignaturas.
+  \item 2 grupos por asignatura.
+\end{itemize}
+
+Este escenario permitirá verificar manualmente la validez de los resultados.
+
+\subsection{Escenario mediano}
+
+\begin{itemize}
+  \item 50 estudiantes.
+  \item 15 asignaturas.
+  \item Entre 3 y 4 grupos por asignatura.
+\end{itemize}
+
+Este escenario permitirá evaluar el comportamiento del algoritmo en
+condiciones más cercanas a un entorno real.
+
+\subsection{Escenario grande}
+
+\begin{itemize}
+  \item 500 o más estudiantes.
+  \item 30 o más asignaturas.
+  \item Múltiples grupos por asignatura.
+\end{itemize}
+
+Este escenario permitirá evaluar la escalabilidad y el tiempo de ejecución del
+algoritmo.
+
+\section{Escenarios especiales}
+
+Se propone generar casos deliberadamente conflictivos, entre ellos:
+
+\begin{itemize}
+  \item muchas asignaturas con horarios coincidentes;
+  \item grupos con baja capacidad;
+  \item gran cantidad de estudiantes interesados en el mismo profesor;
+  \item asignaturas con una única sección disponible;
+  \item estudiantes con muchas asignaturas de alta prioridad;
+  \item salones físicamente muy separados;
+  \item solicitudes imposibles de satisfacer completamente.
+\end{itemize}
+
+Estos casos permitirán evaluar la robustez del algoritmo.
+
+\section{Datos cercanos a escenarios reales}
+
+Como segunda etapa se propone utilizar información obtenida de fuentes reales
+o construida a partir de encuestas. Los datos podrían provenir de horarios
+públicos de asignaturas, información suministrada voluntariamente por
+estudiantes, datos anonimizados e información académica disponible
+públicamente.
+
+Las preferencias subjetivas se obtendrán mediante un formulario con preguntas
+como:
+
+\begin{itemize}
+  \item ¿Qué asignaturas necesita cursar?
+  \item ¿Qué prioridad tiene cada asignatura?
+  \item ¿Tiene profesores preferidos?
+  \item ¿Cuál es la hora mínima en la que desea iniciar clases?
+  \item ¿Cuál es la hora máxima en la que desea terminar clases?
+  \item ¿Prefiere horarios compactos?
+  \item ¿Desea tener un día libre?
+  \item ¿Con qué estudiantes desea coincidir?
+\end{itemize}
+
+No se recolectará información personal sensible que no sea necesaria para el
+problema.
+
+\section{Formato de almacenamiento}
 \label{sec:csv}
 
 Cada instancia se almacena en una carpeta con once archivos CSV. Una fila
@@ -292,123 +791,47 @@ python horarios.py resolver ejemplo resultado.json
 python horarios.py verificar ejemplo resultado.json
 \end{verbatim}
 
-\section{Generación de datos sintéticos}
-
-La instancia se genera con una semilla explícita para que el mismo escenario,
-semilla y versión del generador y de Python produzcan los mismos datos. Cada
-escenario fija el número de estudiantes, asignaturas, grupos por asignatura,
-profesores, salones y solicitudes por estudiante. El generador realiza estos
-pasos:
-
-\begin{enumerate}
-  \item Crear identificadores de los catálogos. Para los salones se generan
-        coordenadas simuladas y se toma la suma de las diferencias absolutas
-        por eje. La matriz resultante es simétrica y tiene diagonal cero.
-  \item Crear las secciones. Las clases empiezan entre 08:00 y 16:00 en
-        pasos de 30 minutos y duran 60, 90 o 120 minutos. Cada sección tiene
-        una o dos sesiones en días distintos. Se usan los mismos profesor
-        y salón para sus sesiones.
-  \item Parametrizar los cupos. Si $R$ es el número total de solicitudes y
-        $|G|$ el número de grupos, el cupo base es
-        $b=\max(1,\lfloor 0{,}8R/|G|\rfloor)$. El cupo de cada sección
-        varía hasta $\lfloor b/3\rfloor$ alrededor de $b$, con mínimo 1.
-        Así se puede observar competencia por cupos.
-  \item Seleccionar materias sin reemplazo para cada estudiante. Se
-        asignan pesos descendentes a los códigos de materia para simular
-        demanda desigual. Las prioridades sintéticas van de 1 a 5. Se
-        generan valoraciones de profesores, límites de hora, compactación,
-        días libres y hasta tres compañeros distintos por estudiante.
-\end{enumerate}
-
-La oferta sintética se trata como entrada fija del problema estudiantil.
-Para evaluar una situación real se propone recuperar la oferta disponible,
-obtener preferencias voluntarias y usar distancias medidas o declaradas con su
-procedencia. Los experimentos de esta entrega emplean datos sintéticos y
-los casos manuales de referencia.
-
-\section{Escenarios de prueba y salidas esperadas}
-
-\begin{table}[H]
-\centering
-\caption{Escalas del generador. Se ejecutan las semillas 202630, 202631 y 202632.}
-\small
-\begin{tabular}{lrrrrrr}
-\toprule
-Escenario & Estudiantes & Materias & Grupos & Profesores & Salones & Solicitudes \\
-\midrule
-Pequeño & 5 & 5 & 10 & 3 & 3 & 15 \\
-Mediano & 50 & 15 & 45 & 12 & 10 & 250 \\
-Grande & 500 & 30 & 120 & 30 & 20 & 3000 \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-El escenario pequeño permite inspeccionar a mano la estructura CSV y revisar
-asignaciones concretas. En el mediano se compara la cobertura y la prioridad
-atendida sobre las mismas entradas. En el grande se registra además el tiempo
-del solucionador. En las tres escalas se comprueba la validez de cada salida
-y se conservan las métricas por semilla para reproducir la comparación.
-
-\begin{table}[H]
-\centering
-\caption{Casos de referencia con resultados comprobables.}
-\small
-\begin{tabular}{@{}p{0.23\linewidth}p{0.35\linewidth}p{0.38\linewidth}@{}}
-\toprule
-\textbf{Caso} & \textbf{Configuración} & \textbf{Comprobación esperada} \\
-\midrule
-Reparación & Una sección de A bloquea ambas opciones de B.
-La alternativa de A deja espacio para B. &
-Es posible cubrir 2 de 2 solicitudes. Cambiar la sección conserva A. \\
-Cupo compartido & Dos estudiantes solicitan la misma asignatura.
-Hay una sola sección de cupo 1. &
-Máximo de 1 de 2 solicitudes. Entre salidas de igual cobertura,
-la referencia atiende prioridad 5. \\
-Brecha & Dos estudiantes y una asignatura sin oferta.
-Para cubrir tres solicitudes se debe mover al primer estudiante. &
-Máximo de 3 de 4 solicitudes. La heurística local puede quedarse en 2. \\
-Límite temporal & Dos sesiones del mismo día terminan y empiezan a la
-misma hora. Se prueba también un intervalo que invade la otra sesión. &
-Se permite la colindancia. Se rechaza la asignación con cruce. \\
-CSV inconsistente & Encabezado incorrecto, clave repetida, ID ausente,
-franja invertida o distancia sin registrar. &
-Se rechaza la entrada antes de construir la asignación. \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-Las salidas esperadas de los tres primeros casos se conservan en
-\texttt{salidas\_esperadas.json}. Se contrastan con un oráculo exhaustivo
-cuando el número de combinaciones es pequeño. Una referencia se puede construir
-sembrando primero una asignación válida y verificando después sus cupos y
-franjas. Pueden existir horarios distintos con el mismo valor, por lo que se
-compara la validez y los valores de referencia. En instancias mayores se usa
-la misma entrada para la línea base y el método propuesto.
-
 \section{Estrategia de validación}
 
-\begin{enumerate}
-  \item \textbf{Estructura e integridad de los CSV.} Revisar encabezados,
-        número de columnas, valores requeridos, unicidad de claves y
-        existencia de referencias. Cuando el error corresponde a una fila, se informa el archivo
-        y la línea. Los errores que abarcan varias filas, como una
-        matriz de distancias incompleta, se detectan al reconstruir la
-        instancia.
-  \item \textbf{Dominios y coherencia de la entrada.} Comprobar cupos
-        positivos, horarios dentro del dominio, hora de inicio menor que
-        la de fin, sesiones de cada grupo sin cruces y matriz de distancias
-        completa, simétrica y no negativa, con diagonal cero.
-  \item \textbf{Validez de $H$.} Un verificador independiente revisa que
-        todos los estudiantes aparezcan en la salida. Después comprueba
-        las cuatro postcondiciones mediante la agenda reconstruida,
-        las solicitudes y el conteo de cupos. Una asignación parcial puede
-        ser válida y las materias sin asignar se reportan como pendientes.
-  \item \textbf{Calidad de $H$.} Recalcular cobertura, prioridades, huecos,
-        distancias, preferencias de profesor y coincidencias. Comparar
-        con casos de referencia o con la línea base según la escala.
-        Registrar el tiempo de resolución por separado del tiempo de carga
-        del CSV.
-\end{enumerate}
+Antes de asignar se comprueba la estructura de los CSV, la unicidad
+de sus claves y la existencia de los identificadores relacionados.
+También se revisan los rangos de las horas, la capacidad de los grupos
+y la coherencia de las distancias.
+
+La validación de las salidas se divide en dos niveles.
+
+\subsection{Nivel 1: validez}
+
+Se verifica que no existan cruces de horario, que no se exceda la capacidad de
+ningún grupo, que cada estudiante tenga máximo una sección por asignatura y que
+los grupos asignados correspondan a asignaturas solicitadas. Si alguna
+condición falla, la solución se considera inválida.
+
+\subsection{Nivel 2: calidad}
+
+Entre soluciones válidas se comparan métricas de calidad, entre ellas la
+cobertura individual, la satisfacción de prioridades, el tiempo libre total,
+la distancia recorrida, la satisfacción con profesores y la coincidencia con
+compañeros preferidos.
+
+Para el conjunto completo de estudiantes se evalúan las siguientes métricas
+globales:
+
+\begin{itemize}
+  \item cobertura global de asignaciones;
+  \item satisfacción promedio de prioridades;
+  \item tiempo libre promedio entre clases;
+  \item distancia promedio recorrida;
+  \item satisfacción promedio con los profesores;
+  \item tiempo de ejecución del algoritmo.
+\end{itemize}
+
+\section{Alcance de esta entrega}
+
+La definición del problema y la estrategia de datos establecen el
+contrato de entrada y salida. A partir de este contrato, la parte
+siguiente presenta el algoritmo implementado, el análisis de su costo
+y la evaluación de los horarios obtenidos.
 
 \clearpage
 \part{Implementación y resultados}
@@ -420,6 +843,33 @@ tablas en una instancia del problema. El algoritmo recibe esta estructura
 y produce \(H\). El verificador comprueba la salida y las métricas se
 calculan a partir de los grupos asignados. La interfaz de escritorio llama
 a las mismas funciones que utiliza la ejecución por terminal.
+
+\subsection{Criterio de comparación}
+\label{sec:criterio-final}
+
+Para cada asignación válida se compara la terna \(F(H)=\bigl(N(H),W(H),Q(H)\bigr)\)
+en orden lexicográfico. Los dos primeros componentes se definen mediante
+las solicitudes atendidas y sus prioridades.
+\[
+\begin{aligned}
+N(H)&=\sum_{e\in E}\left|\operatorname{Asignadas}(e)\right|,\\
+W(H)&=\sum_{e\in E}\ \sum_{a\in\operatorname{Asignadas}(e)}
+        \operatorname{prioridad}(e,a).
+\end{aligned}
+\]
+Si dos asignaciones empatan en \(N(H)\), se compara \(W(H)\).
+El puntaje de preferencias \(Q(H)\) se utiliza cuando también
+coinciden las prioridades atendidas.
+
+Para calcular \(Q(H)\) se suman los puntajes individuales. Para cada
+estudiante se suman 60 puntos por unidad de preferencia del profesor
+asignado y 120 por cada coincidencia de un compañero preferido en un
+grupo. Se descuenta un punto por minuto de clase fuera de la ventana
+deseada y 120 por sesión programada en un día libre preferido. Para
+los estudiantes que prefieren un horario compacto se resta un punto
+por minuto de hueco. También se resta la parte entera de la distancia
+total recorrida en metros dividida entre diez. Los huecos y las
+distancias se miden entre sesiones consecutivas del mismo día.
 
 \subsection{Construcción inicial}
 
@@ -616,20 +1066,22 @@ CSV al iniciar.
         una limitación de la búsqueda local.
 \end{enumerate}
 
-\section{Conclusiones}
+\section{Conclusión}
 
-La estrategia de almacenamiento permite seguir una solicitud desde el
-estudiante hasta las secciones disponibles y sus sesiones. Los CSV se
-pueden generar de manera reproducible y sus relaciones se validan antes de
-hacer la asignación.
+La separación entre análisis y diseño permite explicar primero qué problema se
+busca resolver y establecer después su contrato formal. La definición conserva
+la representación detallada de las entradas, las preferencias, las
+precondiciones, las postcondiciones y las métricas de evaluación, sin depender
+del algoritmo que posteriormente se implemente. La estrategia de datos permite
+generar escenarios controlados y reproducibles, además de incorporar
+información cercana a situaciones reales.
 
-El método propuesto mejora la cobertura o la prioridad atendida en siete
-de las nueve instancias frente a la base. La ganancia en cobertura es
-pequeña en los escenarios de mayor tamaño y se obtiene a cambio de mayor
-tiempo de resolución. En los casos manuales, la búsqueda exacta muestra
-cuándo una modificación individual es suficiente y cuándo conviene
-considerar cambios entre estudiantes. La interfaz permite observar esas
-diferencias a partir de los datos y de las asignaciones que produce el
-algoritmo.
+En las instancias sintéticas, el método propuesto mejoró la cobertura o
+la prioridad atendida en siete de nueve casos frente a la base voraz.
+La mejora requirió más tiempo de resolución. Los casos pequeños permitieron
+comprobar cuándo un cambio de sección recupera una solicitud y cuándo
+haría falta modificar la asignación de otro estudiante. La interfaz
+permite recorrer el proceso completo, desde los CSV hasta la verificación
+del horario.
 
 \end{document}
