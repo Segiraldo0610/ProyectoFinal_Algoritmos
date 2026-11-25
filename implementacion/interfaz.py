@@ -11,7 +11,7 @@ from sesion_demo import CARPETA_PROGRAMA, Sesion
 ESCENARIOS = {"Pequeño · 5 estudiantes": "pequeno", "Mediano · 50 estudiantes": "mediano",
               "Grande · 500 estudiantes": "grande"}
 METODOS = {"Propuesto · backtracking": "propuesto", "Base · voraz": "base",
-           "Exacto · casos pequeños": "exacto"}
+           "Fuerza bruta · casos pequeños": "fuerza_bruta"}
 DIAS = ("Lunes", "Martes", "Miércoles", "Jueves", "Viernes")
 REGLAS = ("Las franjas de cada estudiante son compatibles.",
           "Cada grupo respeta su cupo.",

@@ -17,7 +17,7 @@ python -B -m unittest -v
 python -B horarios.py resolver casos/reparacion.json demo-base.json --metodo base
 python -B horarios.py resolver casos/reparacion.json demo.json --metodo backtracking
 python -B horarios.py verificar casos/reparacion.json demo.json
-python -B horarios.py resolver casos/reparacion.json demo-exacto.json --metodo exacto
+python -B horarios.py resolver casos/reparacion.json demo-fuerza-bruta.json --metodo fuerza_bruta
 ~~~
 
 Para generar una entrada más grande y repetir las mediciones:
@@ -92,7 +92,7 @@ La **base voraz** atiende las solicitudes por identificador y escoge la primera 
 
 **Validez y complejidad.** El horario parcial mantiene las cuatro restricciones y el contador de cupos se restaura al deshacer una decisión. Se utiliza una pila explícita de profundidad a lo sumo igual al número de solicitudes. El árbol crece de forma exponencial en el peor caso. El límite controla cuántos nodos se procesan en la práctica.
 
-**Enumeración exhaustiva.** Es una referencia independiente que evalúa las combinaciones de secciones u omisión, hasta un máximo de 50.000 combinaciones. En [el caso de reasignación](casos/brecha.json), el backtracking y la enumeración alcanzan 3 de 4 solicitudes.
+**Fuerza bruta.** Enumera las combinaciones de grupos y omisiones en casos de hasta 50.000 combinaciones. En [el caso de reasignación](casos/brecha.json), el backtracking y la fuerza bruta atienden 3 de 4 solicitudes.
 
 ## Resultados de la entrega
 

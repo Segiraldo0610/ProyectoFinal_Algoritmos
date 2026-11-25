@@ -12,7 +12,7 @@ independiente comprueba que la asignación cumpla las restricciones del problema
 La estrategia de datos utiliza once archivos CSV relacionados por
 identificadores. El método propuesto utiliza backtracking con poda y parte
 de una asignación voraz. Se compara con esa base y, en casos pequeños, con
-una enumeración exhaustiva.
+la fuerza bruta por enumeración exhaustiva.
 
 ## Informes
 

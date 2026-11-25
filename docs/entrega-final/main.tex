@@ -566,7 +566,7 @@ verificables, cotas conocidas y soluciones base, en lugar de exigir que el
 algoritmo reproduzca exactamente un horario particular.
 
 El archivo \texttt{salidas\_esperadas.json} registra, para cada caso,
-la terna esperada de los métodos base, propuesto y exacto. También
+la terna esperada para el voraz, el backtracking y la fuerza bruta. También
 indica si se pueden atender todas las solicitudes.
 
 \section{Escenarios de prueba}
@@ -838,11 +838,12 @@ y la evaluación de los horarios obtenidos.
 
 \section{Algoritmo de asignación}
 
-La implementación está escrita en Python. El lector CSV transforma las
-tablas en una instancia del problema. El algoritmo recibe esta estructura
-y produce \(H\). El verificador comprueba la salida y las métricas se
-calculan a partir de los grupos asignados. La interfaz de escritorio llama
-a las mismas funciones que utiliza la ejecución por terminal.
+Al leer los CSV, el programa reúne las solicitudes, los grupos y las
+franjas en la instancia \texttt{x}. A partir de esos datos se construye
+la asignación \(H\), se comprueba si cumple las restricciones y se
+calculan las métricas. Tanto la interfaz como la terminal usan esas
+mismas funciones de Python. Los tres algoritmos están en
+\texttt{implementacion/algoritmo.py}.
 
 \subsection{Criterio de comparación}
 \label{sec:criterio-final}
@@ -873,23 +874,23 @@ distancias se miden entre sesiones consecutivas del mismo día.
 
 \subsection{Línea base voraz}
 
-La línea base visita las solicitudes en orden de identificador de
-estudiante y asignatura. Para cada solicitud toma la primera sección
-compatible que tenga cupo. Si no encuentra una sección, deja la solicitud
-pendiente. Esta asignación se conserva como mejor resultado inicial del
-método propuesto.
+La función \texttt{construir\_voraz(x, alternativas, cruzan)} visita
+las solicitudes en orden de identificador de estudiante y asignatura.
+Para cada solicitud toma el primer grupo compatible que tenga cupo.
+Si no lo encuentra, deja la solicitud pendiente. Esta asignación es
+el punto de partida del backtracking.
 
 \subsection{Backtracking con poda}
 
-La búsqueda ordena las solicitudes por número creciente de secciones, por
-prioridad decreciente y, en caso de empate, por identificadores. En cada
-nivel se decide cómo atender un par estudiante--asignatura. Las
-alternativas son las secciones que tienen cupo y que son compatibles con
-el horario parcial del estudiante, además de la opción de dejar la
-solicitud pendiente. Cuando se vuelve a un nivel anterior, se deshace
-la última decisión y se restituyen los cupos y los contadores
-correspondientes. La implementación utiliza una pila explícita para
-recorrer el árbol en profundidad.
+La función \texttt{backtracking(x, limite\_nodos)} empieza por las
+solicitudes que tienen menos grupos. Si dos tienen la misma cantidad
+de grupos, va primero la de mayor prioridad. Si persiste el empate,
+se usan los identificadores.
+En cada nivel se prueba un grupo que tenga cupo y que no se cruce con
+el horario parcial del estudiante. También se puede dejar la materia
+pendiente. Para probar otra opción, se deshace la última decisión y se
+devuelve el cupo si se había usado. La pila guarda el punto del árbol
+desde el que se retoma la búsqueda.
 
 Para acotar lo que puede aportar una rama, sean \(D_a\) el número de
 solicitudes pendientes de explorar para la asignatura \(a\), y \(C_a\)
@@ -952,36 +953,105 @@ agota el árbol, la mejor asignación es óptima según \(F(H)\). Si se
 alcanza el límite, la salida sigue siendo válida y tiene un valor
 al menos igual al de la base, que fue el resultado inicial.
 
-\subsection{Complejidad}
+\subsection{Fuerza bruta}
 
-Sean \(R\) el número total de solicitudes, \(B\) el máximo número de
-secciones por asignatura, \(K\) el máximo de solicitudes de un estudiante
-y \(L\) el máximo número de sesiones de un grupo. La profundidad es a
-lo sumo \(R\) y cada nivel tiene como máximo \(B+1\) alternativas.
-El tamaño del árbol sin poda crece de forma exponencial con \(R\)
-cuando hay varias alternativas por solicitud.
+La función \texttt{fuerza\_bruta(x, limite)} busca el óptimo por
+enumeración exhaustiva. Recorre todas las combinaciones de grupos y
+omisiones. Para cada combinación arma un horario y comprueba si
+respeta las restricciones. Entre los horarios válidos conserva el
+de mayor \(F(H)\). En los casos pequeños se usa como referencia para
+comprobar el resultado del backtracking.
 
-Sea \(V\) el número de nodos visitados, \(T_{\mathrm{base}}\) el tiempo de
-construcción voraz y \(T_F\) el costo de evaluar una asignación completa.
-Una cota conservadora para la ejecución es
+\section{Complejidad de los algoritmos}
+\label{sec:complejidad-algoritmos}
+
+Sea \(R\) el total de solicitudes y \(r\) el número de solicitudes que
+tienen al menos un grupo. Llamamos \(B\) al máximo de grupos por
+asignatura, \(K\) al máximo de solicitudes por estudiante y \(L\) al
+máximo de sesiones por grupo. Comparar dos grupos por primera vez
+cuesta hasta \(O(L^2)\), pues se compara cada sesión de uno con las del
+otro. El análisis parte de los datos de los CSV ya cargados en memoria
+y cuenta el espacio adicional que usa cada método.
+
+\subsection{Línea base voraz}
+
+Para cada solicitud, el voraz revisa hasta \(B\) grupos. Por cada grupo
+con cupo, comprueba que sea compatible con los grupos que el estudiante
+ya tiene, que son a lo sumo \(K\). En el peor caso, esa revisión cuesta
+\(O(RBKL^2)\). Al sumar el costo de ordenar estudiantes, grupos y
+solicitudes, se obtiene
+\begin{multline*}
+ T_{\mathrm{base}} = O\bigl(|E|\log(2+|E|)+|G|\log(2+|G|)\\
+                          {}+ R\log(2+K)+RBKL^2\bigr).
+\end{multline*}
+Las listas de grupos, los cupos y los horarios ocupan
+\(O(|E|+|G|+R)\). El programa también guarda hasta
+\(\min(|G|^2,100\,000)\) resultados de cruces para reutilizarlos.
+
+\subsection{Backtracking con poda}
+
+Cada nivel del árbol corresponde a una solicitud. Se puede asignar
+uno de sus grupos o dejarla pendiente. Con \(r\) niveles y hasta
+\(B+1\) opciones por nivel, el árbol puede tener \(O((B+1)^r)\) nodos.
+La poda corta una rama cuando, aun en el mejor caso, sus decisiones
+pendientes no bastarían para mejorar el horario guardado.
+
+Sea \(V\) el número de nodos visitados y \(U\) el de hojas que se
+evalúan. El método parte del horario voraz, revisa hasta \(B\) grupos
+en cada nodo y llama a \texttt{evaluar()} en esas \(U\) hojas. Si
+\(T_F\) es el costo de esa función, el tiempo se acota por
+\begin{multline*}
+ T_{\mathrm{bt}} =
+ O\bigl(T_{\mathrm{base}}+T_F+R\log(2+R)\\
+         {}+V(1+BKL^2)+UT_F\bigr).
+\end{multline*}
+El término \(R\log(2+R)\) corresponde a ordenar los pedidos antes de
+recorrer el árbol. El límite de 15\,000 nodos acota \(V\) en la
+configuración usada en las pruebas.
+
+La pila tiene hasta \(r\) niveles. El espacio adicional es
+\(O(|E|+|G|+R+KL+\min(|G|^2,100\,000))\). Ahí se cuentan el horario
+parcial, el mejor horario, los cupos, las sesiones que se ordenan al
+evaluar y la caché de cruces.
+
+\subsection{Fuerza bruta}
+
+Si el pedido \(i\) tiene \(b_i\) grupos, hay \(1+b_i\) opciones
+contando la posibilidad de dejarlo pendiente. En el código,
+\texttt{combinaciones} guarda el producto
 \[
- O\bigl(T_{\mathrm{base}}+R\log(2+R)+V(BKL^2+T_F+1)\bigr).
+ J=\prod_{i=1}^{r}(1+b_i)\le (B+1)^r.
 \]
-El término \(BKL^2\) acota la inspección de secciones y los cruces sin
-caché. Las cotas se actualizan en tiempo constante por decisión mediante
-contadores y sumas acumuladas por asignatura. El presupuesto limita
-\(V\) a 15\,000 por defecto. La pila y los datos de la búsqueda ocupan
-\(O(R+|E|+|G|)\) espacio auxiliar, además de la memoria usada para las
-métricas y la caché de hasta 100\,000 comparaciones de grupos.
+Con dos pedidos de dos grupos cada uno, por ejemplo, salen nueve
+combinaciones. Para cada una se construye un horario candidato y se
+comprueba su validez. Los candidatos válidos se evalúan. Si \(T_V\)
+es el costo de \texttt{validar()} y \(T_{\mathrm{prep}}\) el de
+preparar las opciones, el tiempo en el peor caso es
+\[
+ O\bigl(T_{\mathrm{prep}}+J(|E|\log(2+|E|)+r+T_V+T_F)\bigr).
+\]
+En el código se ordenan los estudiantes al crear cada candidato.
+La preparación incluye ordenar los grupos y los pedidos y reunir
+las opciones de cada solicitud:
+\begin{multline*}
+ T_{\mathrm{prep}}=O\biggl(|E|\log(2+|E|)+|G|\log(2+|G|)\\
+                    {}+R\log(2+K)+\sum_{i=1}^{r}(1+b_i)\biggr).
+\end{multline*}
+La enumeración sirve como referencia para instancias de hasta
+50\,000 combinaciones. Genera una combinación a la vez, así que el
+espacio adicional es \(O(|E|+|G|+R+KL+\sum_{i=1}^{r}(1+b_i))\).
+Se guardan las listas de opciones, el candidato que se revisa y el
+mejor horario encontrado.
 
-\subsection{Referencia exacta para casos pequeños}
-
-La búsqueda exhaustiva enumera una sección o la omisión para cada
-solicitud. Descarta las combinaciones inválidas y conserva la mejor terna.
-Si \(b_r\) es la cantidad de secciones de la solicitud \(r\), el número de
-combinaciones es \(\prod_{r=1}^{R}(1+b_r)\). La implementación limita
-esta búsqueda a 50\,000 combinaciones y la utiliza para comprobar casos
-pequeños.
+Al validar se ordenan hasta \(KL\) sesiones por estudiante y se
+recuentan los cupos. Al evaluar, además, se revisan las coincidencias
+con compañeros y se ordenan las materias pendientes. Si \(C\) es el
+máximo de compañeros preferidos por estudiante, se tiene
+\begin{align*}
+ T_V &= O\bigl(|E|+R+|E|KL\log(2+KL)+|G|\log(2+|G|)\bigr),\\
+ T_F &= O\bigl(|E|\log(2+|E|)
+       + |E|\bigl(KL\log(2+KL)+CK^2+K\log(2+K)\bigr)\bigr).
+\end{align*}
 
 \section{Verificación y evaluación experimental}
 
@@ -1003,7 +1073,7 @@ atendidas para cada método.
 \caption{Solicitudes atendidas en los casos de referencia.}
 \begin{tabular}{lccc}
 \toprule
-Caso & Base voraz & Propuesto & Exacto \\
+Caso & Base voraz & Backtracking & Fuerza bruta \\
 \midrule
 Cambio de sección & 1 de 2 & 2 de 2 & 2 de 2 \\
 Cupo compartido & 1 de 2 & 1 de 2 & 1 de 2 \\
@@ -1055,10 +1125,11 @@ medianas y grandes se alcanzó el límite de 15\,000 nodos, por lo que
 se reporta la mejor asignación encontrada en cada caso. Los tiempos
 medidos dependen también de cuántas asignaciones completas se evaluaron.
 
-Los resultados por semilla y el estado de cada búsqueda se encuentran en
-el repositorio \repo. Las pruebas incluyen la lectura de CSV, la
-verificación de horarios, la comparación con la enumeración exhaustiva
-en doce instancias pequeñas y el comportamiento al llegar al límite.
+En \repo{} están los resultados de cada semilla y el estado de cada
+búsqueda. También se puede consultar cómo se probó la lectura de los
+CSV, la validación de los horarios y el límite de nodos. En doce
+instancias pequeñas se comparó el backtracking con la enumeración
+exhaustiva.
 
 \section{Ejecución para la sustentación}
 
@@ -1084,25 +1155,22 @@ CSV al iniciar.
         de sección}. Comparar \textbf{Base \(\cdot\) voraz} con
         \textbf{Propuesto \(\cdot\) backtracking}. El caso
         \textbf{Reasignación entre estudiantes} permite comparar
-        el backtracking con el método exacto. Al pie de la ventana
+        el backtracking con \textbf{Fuerza bruta}. Al pie de la ventana
         aparece el número de nodos y el estado de la búsqueda.
 \end{enumerate}
 
 \section{Conclusión}
 
-La separación entre análisis y diseño permite explicar primero qué problema se
-busca resolver y establecer después su contrato formal. La definición conserva
-la representación detallada de las entradas, las preferencias, las
-precondiciones, las postcondiciones y las métricas de evaluación, sin depender
-del algoritmo que posteriormente se implemente. La estrategia de datos permite
-generar escenarios controlados y reproducibles, además de incorporar
-información cercana a situaciones reales.
+En seis de las nueve instancias, el backtracking atendió más
+solicitudes que el voraz o logró una mayor suma de prioridades con la
+misma cobertura. En las tres instancias grandes llegó al límite de
+nodos y conservó el resultado del voraz. En las pequeñas pudo agotar
+la búsqueda y comprobar el óptimo.
 
-El backtracking con poda mejoró la cobertura o la prioridad atendida
-en seis de nueve instancias y comprobó el óptimo en las tres pequeñas.
-En las instancias grandes, el presupuesto de búsqueda mantuvo acotado
-el trabajo y el resultado coincidió con el de la base voraz. La interfaz
-permite recorrer el proceso desde los CSV y verificar la validez de la
-asignación, además de mostrar si se agotó la búsqueda.
+Con la interfaz se puede seguir cada solicitud desde el CSV hasta el
+horario que recibe el estudiante. El resultado muestra qué materias
+quedaron pendientes y permite comprobar si la asignación respeta los
+cupos y evita los cruces. El estado de la búsqueda indica si se
+comprobó el óptimo o si se llegó al límite de nodos.
 
 \end{document}

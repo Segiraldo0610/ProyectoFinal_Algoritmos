@@ -6,7 +6,7 @@ from platform import python_version
 import sys
 from time import perf_counter
 
-from algoritmo import LIMITE_NODOS, backtracking, exacto, resolver
+from algoritmo import LIMITE_NODOS, backtracking, fuerza_bruta, resolver
 from archivos_csv import escribir_tablas, leer_tablas
 from datos import ESCENARIOS, generar
 from modelo import Instancia, evaluar, validar
@@ -38,13 +38,14 @@ def generar_csv(escenario, semilla, carpeta):
 
 
 def procesar(x, metodo, limite_nodos=LIMITE_NODOS):
+    """Recibe la instancia x, mide el solucionador y verifica el horario devuelto."""
     inicio = perf_counter()
     if metodo in ("propuesto", "backtracking"):
         busqueda = backtracking(x, limite_nodos)
         h = busqueda.horarios
     else:
         busqueda = None
-        h = exacto(x) if metodo == "exacto" else resolver(x, metodo)
+        h = fuerza_bruta(x) if metodo in ("fuerza_bruta", "exacto") else resolver(x, metodo)
     tiempo = perf_counter() - inicio
     errores = validar(x, h)
     if errores:
@@ -84,7 +85,7 @@ def main(argv=None):
     sol = sub.add_parser("resolver", help="asigna grupos y reporta métricas")
     sol.add_argument("entrada", type=Path)
     sol.add_argument("salida", type=Path)
-    sol.add_argument("--metodo", choices=("base", "propuesto", "backtracking", "exacto"),
+    sol.add_argument("--metodo", choices=("base", "propuesto", "backtracking", "fuerza_bruta", "exacto"),
                      default="propuesto")
     sol.add_argument("--limite-nodos", type=int, default=LIMITE_NODOS,
                      help="máximo de nodos del backtracking")

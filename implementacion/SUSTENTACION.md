@@ -22,7 +22,7 @@ Pulsa **Asignar horarios** con **Propuesto · backtracking**. Se atienden 10 de 
 
 En **Casos para la sustentación → Cambio de sección**, corre **Base · voraz** y después **Propuesto · backtracking**. La base toma A1 de 08:00 a 09:00 y cubre 1 de 2. Al explorar esa elección, el backtracking comprueba que ambas opciones de B se cruzan. Vuelve sobre la decisión, restaura el cupo y prueba A2 de 09:00 a 10:00. Así obtiene A2 y B1 y cubre 2 de 2.
 
-En **Reasignación entre estudiantes**, compara los tres métodos. El voraz atiende 2 de 4. El backtracking y el exacto atienden 3 de 4 al considerar E1 en A2 y E2 en A1 y B1. C queda pendiente porque no tiene grupos.
+En **Reasignación entre estudiantes**, compara los tres métodos. El voraz atiende 2 de 4. El backtracking y **Fuerza bruta · casos pequeños** atienden 3 de 4 al asignar A2 a E1 y A1 y B1 a E2. C queda pendiente porque no tiene grupos.
 
 ## Preguntas para practicar
 
