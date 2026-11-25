@@ -4,11 +4,13 @@
 **Cesar Santiago Canro Cabra y Samuel Enrique Giraldo Sabogal**  
 Pontificia Universidad Javeriana · Departamento de Ingeniería de Sistemas
 
-El programa selecciona grupos para las asignaturas solicitadas por cada estudiante, verifica las cuatro postcondiciones de la primera entrega y reporta la cobertura, las solicitudes pendientes y las preferencias satisfechas. La sustentación de la semana 17 es individual. El guion y el ejercicio manual están en [SUSTENTACION.md](SUSTENTACION.md).
+Cada estudiante pide unas materias y el programa elige los grupos que le caben en el horario. La salida guarda los grupos asignados, las materias que quedaron pendientes y los datos para comparar horarios. La interfaz y la terminal usan el mismo algoritmo.
 
-## Reproducir la entrega
+Para abrir la ventana, sigue los [pasos de PyCharm](../README.md#cómo-abrirlo-en-pycharm). El [guion de sustentación](SUSTENTACION.md) tiene un ejemplo que se puede explicar a mano.
 
-Desde esta carpeta, con Python 3.10 o posterior y su biblioteca estándar:
+## Correr las pruebas y los ejemplos
+
+Los comandos se ejecutan desde la carpeta `implementacion` con Python 3.10 o posterior. Primero puedes comprobar las pruebas y el caso en que la reparación recupera una materia.
 
 ~~~text
 python -B -m unittest -v
@@ -16,15 +18,20 @@ python -B horarios.py resolver casos/reparacion.json demo-base.json --metodo bas
 python -B horarios.py resolver casos/reparacion.json demo.json
 python -B horarios.py verificar casos/reparacion.json demo.json
 python -B horarios.py resolver casos/reparacion.json demo-exacto.json --metodo exacto
+~~~
+
+Para generar una entrada más grande y repetir las mediciones:
+
+~~~text
 python -B horarios.py generar grande entrada-grande --formato csv --semilla 202631
 python -B horarios.py resolver entrada-grande salida-grande.json
 python -B horarios.py verificar entrada-grande salida-grande.json
 python -B horarios.py evaluar medicion-local.json
 ~~~
 
-`verificar` devuelve código 0 para una salida válida, 1 si viola el contrato y 2 si falla la lectura o el formato. Recalcula las métricas a partir de la asignación. Las mediciones de la entrega están en [resultados.json](resultados.json).
+El comando `verificar` vuelve a calcular las métricas usando los grupos que aparecen en la salida. Devuelve 0 si el horario es válido, 1 si incumple alguna regla y 2 si hay un problema al leer los archivos. Las mediciones originales están en [resultados.json](resultados.json).
 
-## Contrato que viene de la semana 10
+## Qué recibe el programa y qué devuelve
 
 | Formalización | Representación y verificación |
 | --- | --- |
@@ -36,7 +43,7 @@ python -B horarios.py evaluar medicion-local.json
 
 ### Entrada CSV
 
-La carpeta de entrada contiene once archivos de texto UTF-8, separados por comas y con encabezados fijos. El programa une las tablas por identificador, comprueba los dominios y verifica que las referencias existan. Las salidas se escriben en JSON fuera de la carpeta de entrada. El ejemplo completo se incluye en `ejemplo_csv`.
+Una entrada es una carpeta con once CSV. El formato usa comas, texto UTF-8 y encabezados fijos. Por ejemplo, una fila en `grupos.csv` registra el cupo de una sección y su `grupo_id`. Si esa sección se reúne dos días, `horarios.csv` tiene dos filas con ese mismo ID. Al cargar los archivos, el programa revisa que existan los IDs relacionados y que los datos tengan sentido. La salida JSON se guarda fuera de la carpeta de entrada. [Ver el ejemplo CSV](ejemplo_csv/).
 
 | Archivo | Encabezado en orden |
 | --- | --- |
@@ -54,7 +61,7 @@ La carpeta de entrada contiene once archivos de texto UTF-8, separados por comas
 
 Cada grupo tiene una fila. Cada sesión del grupo ocupa una fila en `horarios.csv`. Cada solicitud es única por pareja estudiante–asignatura. Las tablas de preferencias por profesor, días libres y compañeros pueden contener solo el encabezado. Los enteros se escriben sin relleno con ceros y `compacto` se representa con 0 o 1. Se registran ambas direcciones y la diagonal de la matriz de distancias.
 
-El generador registra semilla, escenario y versiones de Python y del esquema en `meta.json`. Ese archivo documenta la reproducción y es opcional para resolver. Para regenerar los datos, indica otra carpeta de destino. Los archivos de ejemplo ya se pueden usar en la demo.
+Al generar los CSV, `meta.json` deja anotados la semilla, el escenario y las versiones de Python y del esquema. Puedes resolver una entrada sin ese archivo. Para repetir la generación, elige una carpeta nueva. Los CSV de ejemplo ya vienen listos para abrir en la ventana o desde la terminal:
 
 ~~~text
 python -B horarios.py resolver ejemplo_csv salida-csv.json
@@ -67,26 +74,26 @@ La entrada JSON contiene `grupos`, `estudiantes` y `distancias`. Véase [casos/r
 
 Cada estudiante tiene `id` y un objeto no vacío `solicitudes` de asignatura a prioridad entera positiva. Las asignaturas sin oferta quedan pendientes. Los campos opcionales son `profesor` (valor de 0 a 5 por ID, con 0 para preferencia no informada), `inicio_min` (0), `fin_max` (1440), `compacto` (falso), `dias_libres` y `companeros` (arreglos vacíos por defecto). Las preferencias de compañeros son dirigidas. La matriz `distancias` incluye una fila por salón, con todas sus columnas, valores enteros no negativos en metros, diagonal cero y simetría. Los catálogos de asignaturas y profesores se representan por los identificadores referidos.
 
-## Criterio de evaluación
+## Cómo se comparan dos horarios
 
-Se maximiza lexicográficamente la terna **(solicitudes asignadas, suma de prioridades asignadas, puntaje de preferencias)**. Por ejemplo, 145 asignaciones prevalecen sobre 144. Con igual cobertura se compara la prioridad. Con ambas iguales se usa el puntaje.
+Primero gana el horario que atiende más solicitudes. Si ambos atienden la misma cantidad, gana el que suma más prioridad en las materias asignadas. Si siguen empatados, se compara el puntaje de preferencias. Ese orden se guarda en la terna **(solicitudes asignadas, suma de prioridades, puntaje de preferencias)**.
 
 Para cada estudiante, el puntaje suma 60 por punto de profesor y 120 por coincidencia dirigida de compañero y grupo. Resta un punto por minuto de clase fuera de la ventana deseada, 120 por sesión en un día libre preferido, un punto por minuto de hueco cuando el estudiante prefiere compactación y la parte entera de la distancia en metros dividida entre 10. Huecos y desplazamientos se calculan entre sesiones consecutivas del mismo día. El puntaje total es la suma de los puntajes individuales. El promedio de profesores usa las valoraciones informadas y es nulo cuando no hay ninguna. El reporte también conserva las medidas en sus unidades originales.
 
-Las ponderaciones son decisiones explícitas de esta implementación. Las cinco preferencias afectan la evaluación y la elección de grupos en el inicio guiado. La cobertura global cuenta pares estudiante–asignatura, así que un estudiante que pide más materias aporta más solicitudes al denominador.
+Estas ponderaciones se usan para comparar los resultados y elegir grupos en el inicio guiado. La cobertura global se calcula entre todos los estudiantes de la entrada. Por eso, una persona que pide cinco materias aporta cinco solicitudes al denominador.
 
-## Algoritmo y verificación
+## Cómo se arman y comprueban los horarios
 
-1. La base recorre solicitudes por identificador de estudiante y asignatura. Toma la primera sección con cupo y compatible.
-2. El método propuesto construye un horario con ese orden simple y otro que procesa primero las solicitudes con menos secciones. Desempata por prioridad descendente, menor flexibilidad total del estudiante e identificadores. En el inicio guiado elige la sección cuya incorporación da el mayor puntaje individual calculado con las asignaciones disponibles en ese momento.
-3. En ambos horarios, revisa una vez las solicitudes pendientes. Puede añadir una sección libre que encaje directamente. Si existe un único grupo que bloquea la nueva sección, prueba mover ese grupo a otra sección de su misma materia con cupo. Verifica la compatibilidad del horario candidato antes de actualizar los cupos.
-4. Puntúa los dos horarios completos y devuelve el mayor en orden lexicográfico. La salida de cada método pasa por el mismo verificador independiente, que ordena las sesiones de cada estudiante y cuenta matrículas por grupo.
+1. **Base voraz.** Recorre las solicitudes por ID de estudiante y de materia. Usa el primer grupo que tenga cupo y encaje en el horario.
+2. **Dos puntos de partida.** El método propuesto arma un horario con ese orden y otro que atiende primero las solicitudes con menos secciones. Desempata por prioridad, menor flexibilidad del estudiante e identificadores. En este segundo intento escoge el grupo que deje el mejor puntaje individual en ese momento.
+3. **Reparación.** Revisa una vez las materias pendientes en cada intento. Si hay un grupo libre que encaja, lo agrega. Si solo una clase lo bloquea, prueba mover esa clase a otro grupo de la misma materia. Antes de aplicar el cambio comprueba cruces y cupos.
+4. **Elección y verificación.** Compara los dos resultados y devuelve el que tenga mejor terna. El verificador vuelve a ordenar las sesiones y a contar los cupos desde la salida para revisar las cuatro reglas.
 
 **Invariante.** Los horarios parciales contienen exclusivamente solicitudes, a lo sumo una sección por materia, y sesiones compatibles. Para cada grupo, cupo libre = capacidad − estudiantes asignados. El estado vacío cumple el invariante. En la construcción se inserta una solicitud nueva compatible con cupo disponible. Cada reparación añade una solicitud nueva y, si cambia un grupo previo, conserva su materia y actualiza los cupos de los tres grupos afectados. Así se preserva el invariante y cada reparación aceptada aumenta la cobertura en una unidad. El inicio simple reparado conserva o supera el objetivo de la base. Elegir el mejor de los dos candidatos conserva esa propiedad.
 
 **Complejidad.** Sean R las solicitudes, G los grupos, E los estudiantes, B el máximo de secciones por materia, K las solicitudes por estudiante como máximo, L las sesiones por grupo como máximo y C los compañeros preferidos por estudiante como máximo. Puntuar una propuesta cuesta como máximo M = O(KL log(2+KL) + CK² + K). Un chequeo de dos grupos cuesta O(L²) sin caché. Una cota superior conservadora del método propuesto es O(G log(2+G) + E log(2+E) + R log(2+R) + R·B²·(K·L² + M) + E·M). Los dos inicios son un factor constante. El almacenamiento auxiliar incluye O(G + E + R) para listas, horarios y cupos, además de hasta 100.000 entradas en caché y O(KL) de trabajo por horario. La entrada incluye la matriz de distancias, de tamaño cuadrático en los salones.
 
-**Oráculo.** Para cada solicitud enumera todas sus secciones y la opción de dejarla pendiente. El producto incluye cada asignación admisible. Descarta las que infringen las postcondiciones y conserva el máximo de la terna. El número de combinaciones es el producto de (1 + secciones) por solicitud. La CLI limita esta búsqueda a 50.000 combinaciones y la usa como referencia de instancias pequeñas. El método propuesto puede quedarse corto si necesita mover la asignación de otro estudiante, como ocurre en `casos/brecha.json`.
+**Método exacto para casos pequeños.** Prueba todas las combinaciones posibles, incluida la opción de dejar una materia pendiente. Entre los horarios válidos conserva el que tiene la mejor terna. El número de combinaciones es el producto de (1 + secciones) por solicitud. La búsqueda tiene un límite de 50.000 combinaciones. En [el caso de brecha](casos/brecha.json), el exacto encuentra una solicitud adicional porque puede considerar soluciones que cambian grupos de varios estudiantes.
 
 ## Resultados de la entrega
 
@@ -98,6 +105,6 @@ Promedios de tres semillas por escala. Tiempos del solucionador, sin carga de ar
 | 50 | 57,87 % → 58,27 % | 429,67 → 544,67 | 0,61 ms → 4,87 ms |
 | 500 | 65,87 % → 65,97 % | 5953,00 → 6865,00 | 9,84 ms → 85,55 ms |
 
-En las nueve instancias hubo cinco mejoras en cobertura, dos mejoras en prioridad con cobertura igual y dos empates completos. En una instancia de 5 estudiantes el puntaje de preferencias bajó al atender prioridades mayores con la misma cobertura, según la jerarquía declarada. El método propuesto cuesta más por los dos inicios y la reparación. Los escenarios se diseñaron con demanda desigual y cupos ajustados, por lo que reportar pendientes es parte del resultado.
+En cinco de los nueve casos, la propuesta atendió más solicitudes. En otros dos cubrió la misma cantidad y atendió materias de mayor prioridad. Los dos restantes quedaron empatados. En un caso pequeño, esa mejora en prioridad redujo el puntaje de preferencias. Probar dos órdenes y revisar las materias pendientes también tomó más tiempo, como muestra la tabla.
 
-Las distancias y preferencias de estas pruebas son sintéticas. Las distancias provienen de puntos simulados y la evaluación describe estas instancias. Los archivos manuales y sus [salidas esperadas](casos/salidas_esperadas.json) comprueban tres propiedades: beneficio de la reparación, desempate por prioridad con un único cupo y brecha frente al óptimo cuando se necesita un cambio entre estudiantes.
+Los resultados corresponden a datos simulados con cupos ajustados y demanda desigual. Para revisar el comportamiento paso a paso están los [casos comprobados a mano](casos/) y sus [salidas esperadas](casos/salidas_esperadas.json).
