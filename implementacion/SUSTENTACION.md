@@ -4,6 +4,20 @@ Cesar Santiago Canro Cabra · Samuel Enrique Giraldo Sabogal
 
 El enunciado fija la sustentación individual en la última sesión de clase. El siguiente guion es una práctica de seis minutos. Cada integrante debe poder explicar el proceso completo y reproducir las salidas con su propia explicación.
 
+## Ruta sin consola
+
+Abre el lanzador de la raíz con doble clic o ejecuta `interfaz.py` desde
+PyCharm. Selecciona **Pequeño**, deja la semilla 202630 y pulsa **Generar CSV**.
+En la pestaña **Datos CSV**, compara `solicitudes.csv`, `grupos.csv` y `horarios.csv`.
+Pulsa **Asignar horarios** y cambia de E001 a E005 para mostrar la cobertura
+individual y una materia pendiente. Luego pulsa **Verificar resultado** para
+mostrar las cuatro reglas.
+
+Para la comparación, abre **Casos para la sustentación → Reparación**. Asigna
+primero con **Base · voraz** y después con **Propuesto · con reparación**.
+Compara 1/2 con 2/2 y explica qué sección cambió. En el caso de brecha, compara
+la propuesta con **Exacto · casos pequeños**.
+
 ## Guion de seis minutos
 
 | Tiempo | Qué mostrar | Qué explicar |

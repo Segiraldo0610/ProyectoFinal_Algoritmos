@@ -31,6 +31,12 @@ def emitir(datos, ruta=None):
         ruta.write_text(texto, encoding="utf-8")
 
 
+def generar_csv(escenario, semilla, carpeta):
+    escribir_tablas(generar(escenario, semilla), carpeta)
+    emitir(dict(escenario=escenario, semilla=semilla, esquema_csv=1,
+                python=python_version()), carpeta / "meta.json")
+
+
 def procesar(x, metodo):
     inicio = perf_counter()
     h = exacto(x) if metodo == "exacto" else resolver(x, metodo)
@@ -77,13 +83,10 @@ def main(argv=None):
     args = parser.parse_args(argv)
     try:
         if args.accion == "generar":
-            datos = generar(args.escenario, args.semilla)
             if args.formato == "csv":
-                escribir_tablas(datos, args.salida)
-                emitir(dict(escenario=args.escenario, semilla=args.semilla, esquema_csv=1,
-                            python=python_version()), args.salida / "meta.json")
+                generar_csv(args.escenario, args.semilla, args.salida)
             else:
-                emitir(datos, args.salida)
+                emitir(generar(args.escenario, args.semilla), args.salida)
         elif args.accion == "evaluar":
             emitir(comparar(args.semillas), args.salida)
         else:
