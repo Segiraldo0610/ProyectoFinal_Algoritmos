@@ -1,0 +1,14 @@
+__pycache__/
+*.py[cod]
+.venv/
+*.aux
+*.fls
+*.fdb_latexmk
+*.log
+*.out
+*.synctex.gz
+*.toc
+implementacion/salida*.json
+implementacion/demo*.json
+implementacion/entrada-*/
+implementacion/medicion-local.json

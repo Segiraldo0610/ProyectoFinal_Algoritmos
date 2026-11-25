@@ -1,0 +1,10 @@
+{
+  "distancias": {"S1": {"S1": 0}},
+  "grupos": [
+    {"id": "A1", "asignatura": "A", "profesor": "P1", "salon": "S1", "capacidad": 1, "franjas": [[1, 480, 540]]}
+  ],
+  "estudiantes": [
+    {"id": "E1", "solicitudes": {"A": 1}},
+    {"id": "E2", "solicitudes": {"A": 5}}
+  ]
+}

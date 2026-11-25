@@ -1,0 +1,12 @@
+{
+  "distancias": {"S1": {"S1": 0}},
+  "grupos": [
+    {"id": "A1", "asignatura": "A", "profesor": "P1", "salon": "S1", "capacidad": 1, "franjas": [[1, 480, 540]]},
+    {"id": "A2", "asignatura": "A", "profesor": "P1", "salon": "S1", "capacidad": 1, "franjas": [[2, 480, 540]]},
+    {"id": "B1", "asignatura": "B", "profesor": "P1", "salon": "S1", "capacidad": 1, "franjas": [[2, 480, 540]]}
+  ],
+  "estudiantes": [
+    {"id": "E1", "solicitudes": {"A": 3, "C": 1}},
+    {"id": "E2", "solicitudes": {"A": 3, "B": 3}}
+  ]
+}

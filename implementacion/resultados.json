@@ -1,0 +1,380 @@
+[
+  {
+    "base": {
+      "asignadas": 10,
+      "calidad": 1129,
+      "clases_en_dias_libres": 1,
+      "cobertura": 0.6666666666666666,
+      "coincidencias": 0,
+      "distancia_m": 713,
+      "huecos_min": 150,
+      "min_fuera": 180,
+      "objetivo": [
+        10,
+        30,
+        1129
+      ],
+      "prioridad_atendida": 30,
+      "solicitadas": 15,
+      "tiempo_s": 7.1e-05
+    },
+    "escenario": "pequeno",
+    "estudiantes": 5,
+    "grupos": 10,
+    "propuesto": {
+      "asignadas": 10,
+      "calidad": 1489,
+      "clases_en_dias_libres": 0,
+      "cobertura": 0.6666666666666666,
+      "coincidencias": 0,
+      "distancia_m": 713,
+      "huecos_min": 90,
+      "min_fuera": 180,
+      "objetivo": [
+        10,
+        34,
+        1489
+      ],
+      "prioridad_atendida": 34,
+      "solicitadas": 15,
+      "tiempo_s": 0.000553
+    },
+    "semilla": 202630
+  },
+  {
+    "base": {
+      "asignadas": 8,
+      "calidad": 1359,
+      "clases_en_dias_libres": 1,
+      "cobertura": 0.5333333333333333,
+      "coincidencias": 0,
+      "distancia_m": 514,
+      "huecos_min": 0,
+      "min_fuera": 30,
+      "objetivo": [
+        8,
+        27,
+        1359
+      ],
+      "prioridad_atendida": 27,
+      "solicitadas": 15,
+      "tiempo_s": 4.2e-05
+    },
+    "escenario": "pequeno",
+    "estudiantes": 5,
+    "grupos": 10,
+    "propuesto": {
+      "asignadas": 8,
+      "calidad": 1269,
+      "clases_en_dias_libres": 1,
+      "cobertura": 0.5333333333333333,
+      "coincidencias": 0,
+      "distancia_m": 514,
+      "huecos_min": 0,
+      "min_fuera": 60,
+      "objetivo": [
+        8,
+        32,
+        1269
+      ],
+      "prioridad_atendida": 32,
+      "solicitadas": 15,
+      "tiempo_s": 0.000246
+    },
+    "semilla": 202631
+  },
+  {
+    "base": {
+      "asignadas": 10,
+      "calidad": 780,
+      "clases_en_dias_libres": 2,
+      "cobertura": 0.6666666666666666,
+      "coincidencias": 0,
+      "distancia_m": 0,
+      "huecos_min": 210,
+      "min_fuera": 510,
+      "objetivo": [
+        10,
+        27,
+        780
+      ],
+      "prioridad_atendida": 27,
+      "solicitadas": 15,
+      "tiempo_s": 4.2e-05
+    },
+    "escenario": "pequeno",
+    "estudiantes": 5,
+    "grupos": 10,
+    "propuesto": {
+      "asignadas": 10,
+      "calidad": 780,
+      "clases_en_dias_libres": 2,
+      "cobertura": 0.6666666666666666,
+      "coincidencias": 0,
+      "distancia_m": 0,
+      "huecos_min": 210,
+      "min_fuera": 510,
+      "objetivo": [
+        10,
+        27,
+        780
+      ],
+      "prioridad_atendida": 27,
+      "solicitadas": 15,
+      "tiempo_s": 0.000264
+    },
+    "semilla": 202632
+  },
+  {
+    "base": {
+      "asignadas": 141,
+      "calidad": 2010,
+      "clases_en_dias_libres": 25,
+      "cobertura": 0.564,
+      "coincidencias": 27,
+      "distancia_m": 16318,
+      "huecos_min": 5910,
+      "min_fuera": 2280,
+      "objetivo": [
+        141,
+        414,
+        2010
+      ],
+      "prioridad_atendida": 414,
+      "solicitadas": 250,
+      "tiempo_s": 0.00057
+    },
+    "escenario": "mediano",
+    "estudiantes": 50,
+    "grupos": 45,
+    "propuesto": {
+      "asignadas": 142,
+      "calidad": 11038,
+      "clases_en_dias_libres": 19,
+      "cobertura": 0.568,
+      "coincidencias": 27,
+      "distancia_m": 9738,
+      "huecos_min": 4890,
+      "min_fuera": 2160,
+      "objetivo": [
+        142,
+        530,
+        11038
+      ],
+      "prioridad_atendida": 530,
+      "solicitadas": 250,
+      "tiempo_s": 0.004815
+    },
+    "semilla": 202630
+  },
+  {
+    "base": {
+      "asignadas": 144,
+      "calidad": 2009,
+      "clases_en_dias_libres": 26,
+      "cobertura": 0.576,
+      "coincidencias": 31,
+      "distancia_m": 14221,
+      "huecos_min": 5670,
+      "min_fuera": 1410,
+      "objetivo": [
+        144,
+        438,
+        2009
+      ],
+      "prioridad_atendida": 438,
+      "solicitadas": 250,
+      "tiempo_s": 0.000664
+    },
+    "escenario": "mediano",
+    "estudiantes": 50,
+    "grupos": 45,
+    "propuesto": {
+      "asignadas": 145,
+      "calidad": 13889,
+      "clases_en_dias_libres": 10,
+      "cobertura": 0.58,
+      "coincidencias": 26,
+      "distancia_m": 9114,
+      "huecos_min": 3000,
+      "min_fuera": 1500,
+      "objetivo": [
+        145,
+        547,
+        13889
+      ],
+      "prioridad_atendida": 547,
+      "solicitadas": 250,
+      "tiempo_s": 0.00473
+    },
+    "semilla": 202631
+  },
+  {
+    "base": {
+      "asignadas": 149,
+      "calidad": 1989,
+      "clases_en_dias_libres": 16,
+      "cobertura": 0.596,
+      "coincidencias": 28,
+      "distancia_m": 18033,
+      "huecos_min": 7650,
+      "min_fuera": 2580,
+      "objetivo": [
+        149,
+        437,
+        1989
+      ],
+      "prioridad_atendida": 437,
+      "solicitadas": 250,
+      "tiempo_s": 0.000588
+    },
+    "escenario": "mediano",
+    "estudiantes": 50,
+    "grupos": 45,
+    "propuesto": {
+      "asignadas": 150,
+      "calidad": 10785,
+      "clases_en_dias_libres": 15,
+      "cobertura": 0.6,
+      "coincidencias": 31,
+      "distancia_m": 11356,
+      "huecos_min": 4170,
+      "min_fuera": 1890,
+      "objetivo": [
+        150,
+        557,
+        10785
+      ],
+      "prioridad_atendida": 557,
+      "solicitadas": 250,
+      "tiempo_s": 0.005068
+    },
+    "semilla": 202632
+  },
+  {
+    "base": {
+      "asignadas": 2013,
+      "calidad": -62849,
+      "clases_en_dias_libres": 242,
+      "cobertura": 0.671,
+      "coincidencias": 241,
+      "distancia_m": 334606,
+      "huecos_min": 95790,
+      "min_fuera": 28200,
+      "objetivo": [
+        2013,
+        6117,
+        -62849
+      ],
+      "prioridad_atendida": 6117,
+      "solicitadas": 3000,
+      "tiempo_s": 0.010674
+    },
+    "escenario": "grande",
+    "estudiantes": 500,
+    "grupos": 120,
+    "propuesto": {
+      "asignadas": 2013,
+      "calidad": -62849,
+      "clases_en_dias_libres": 242,
+      "cobertura": 0.671,
+      "coincidencias": 241,
+      "distancia_m": 334606,
+      "huecos_min": 95790,
+      "min_fuera": 28200,
+      "objetivo": [
+        2013,
+        6117,
+        -62849
+      ],
+      "prioridad_atendida": 6117,
+      "solicitadas": 3000,
+      "tiempo_s": 0.086471
+    },
+    "semilla": 202630
+  },
+  {
+    "base": {
+      "asignadas": 1988,
+      "calidad": -59915,
+      "clases_en_dias_libres": 239,
+      "cobertura": 0.6626666666666666,
+      "coincidencias": 216,
+      "distancia_m": 248558,
+      "huecos_min": 93930,
+      "min_fuera": 28650,
+      "objetivo": [
+        1988,
+        6024,
+        -59915
+      ],
+      "prioridad_atendida": 6024,
+      "solicitadas": 3000,
+      "tiempo_s": 0.009331
+    },
+    "escenario": "grande",
+    "estudiantes": 500,
+    "grupos": 120,
+    "propuesto": {
+      "asignadas": 1990,
+      "calidad": 64883,
+      "clases_en_dias_libres": 134,
+      "cobertura": 0.6633333333333333,
+      "coincidencias": 292,
+      "distancia_m": 164278,
+      "huecos_min": 61500,
+      "min_fuera": 22200,
+      "objetivo": [
+        1990,
+        7337,
+        64883
+      ],
+      "prioridad_atendida": 7337,
+      "solicitadas": 3000,
+      "tiempo_s": 0.085348
+    },
+    "semilla": 202631
+  },
+  {
+    "base": {
+      "asignadas": 1927,
+      "calidad": -81356,
+      "clases_en_dias_libres": 231,
+      "cobertura": 0.6423333333333333,
+      "coincidencias": 204,
+      "distancia_m": 337771,
+      "huecos_min": 110250,
+      "min_fuera": 34380,
+      "objetivo": [
+        1927,
+        5718,
+        -81356
+      ],
+      "prioridad_atendida": 5718,
+      "solicitadas": 3000,
+      "tiempo_s": 0.009515
+    },
+    "escenario": "grande",
+    "estudiantes": 500,
+    "grupos": 120,
+    "propuesto": {
+      "asignadas": 1934,
+      "calidad": 51167,
+      "clases_en_dias_libres": 142,
+      "cobertura": 0.6446666666666667,
+      "coincidencias": 278,
+      "distancia_m": 210779,
+      "huecos_min": 75300,
+      "min_fuera": 27810,
+      "objetivo": [
+        1934,
+        7141,
+        51167
+      ],
+      "prioridad_atendida": 7141,
+      "solicitadas": 3000,
+      "tiempo_s": 0.084825
+    },
+    "semilla": 202632
+  }
+]
