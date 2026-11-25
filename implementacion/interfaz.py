@@ -1,11 +1,11 @@
-"""Ventana de escritorio para la demostración del asignador."""
+"""Interfaz de escritorio para generar datos, asignar y verificar horarios."""
 
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
-from sesion_demo import CARPETA_PROGRAMA, Sesion
+from sesion_interfaz import CARPETA_PROGRAMA, Sesion
 
 
 ESCENARIOS = {"Pequeño · 5 estudiantes": "pequeno", "Mediano · 50 estudiantes": "mediano",
@@ -72,7 +72,7 @@ class Aplicacion:
         self.sesion = Sesion()
         self.temporales = None
         self.raiz.protocol("WM_DELETE_WINDOW", self.cerrar)
-        self.raiz.title("Asignación de horarios · Sustentación")
+        self.raiz.title("Asignación de horarios")
         self.raiz.configure(background=FONDO)
         self.raiz.minsize(930, 615)
         ancho = min(1190, raiz.winfo_screenwidth() - 60)
@@ -183,7 +183,7 @@ class Aplicacion:
         self.boton_generar = boton("Generar CSV", self.generar, True)
         boton("Abrir carpeta CSV", self.abrir_carpeta)
         boton("Cargar ejemplo", self.cargar_ejemplo)
-        casos = ttk.Menubutton(panel, text="Casos para la sustentación")
+        casos = ttk.Menubutton(panel, text="Casos de prueba")
         menu = tk.Menu(casos, tearoff=False)
         for caso, etiqueta in (("reparacion", "Cambio de sección"), ("cupo", "Cupo compartido"),
                                ("brecha", "Reasignación entre estudiantes")):

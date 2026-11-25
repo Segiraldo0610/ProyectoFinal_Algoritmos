@@ -39,24 +39,17 @@ de Python para Windows incluye Tkinter.
 También puedes abrir la ventana desde el explorador de Windows con doble
 clic en [Abrir interfaz.pyw](Abrir%20interfaz.pyw).
 
-## Demostración de la asignación
+## Uso de la interfaz
 
-1. Selecciona el escenario **Pequeño** y la semilla `202630`. Pulsa
-   **Generar CSV**. En **Datos CSV**, consulta `solicitudes.csv`,
-   `grupos.csv` y `horarios.csv` para seguir una solicitud hasta las
-   secciones ofrecidas y sus sesiones.
-2. Pulsa **Asignar horarios**. En esta instancia se atienden **10 de 15
-   solicitudes (66,7 %)**. El horario de **E005** permite consultar sus
-   sesiones asignadas y la materia A04 pendiente.
-3. Pulsa **Verificar resultado** para comprobar las cuatro restricciones.
-   **Guardar resultado JSON** exporta la asignación y sus métricas.
+1. Carga una carpeta con los CSV de entrada o crea una con **Generar CSV**.
+2. Selecciona un método y pulsa **Asignar horarios**. Puedes consultar el
+   horario, las materias pendientes y la cobertura de cada estudiante.
+3. Pulsa **Verificar resultado** para comprobar las restricciones. Usa
+   **Guardar resultado JSON** para exportar la asignación y las métricas.
 
-En **Casos para la sustentación → Cambio de sección**, ejecuta
-**Base · voraz** y después **Propuesto · backtracking**. El backtracking
-retrocede y prueba otra sección, con lo que pasa de una a dos solicitudes.
-Al pie de la ventana se indica si se comprobó el óptimo o se alcanzó el
-límite de 15.000 nodos. En **Reasignación entre estudiantes**, ambos
-métodos de búsqueda coinciden en **3 de 4**, frente a **2 de 4** del voraz.
+El menú **Casos de prueba** carga las instancias de referencia de
+[implementacion/casos](implementacion/casos/). Sus resultados esperados
+están en [salidas_esperadas.json](implementacion/casos/salidas_esperadas.json).
 
 ## Archivos del proyecto
 
@@ -65,7 +58,6 @@ métodos de búsqueda coinciden en **3 de 4**, frente a **2 de 4** del voraz.
 | Formato de entrada, algoritmo y resultados | [Documentación técnica](implementacion/README.md) |
 | Archivos CSV de ejemplo, listos para resolver | [Datos de entrada](implementacion/ejemplo_csv/) |
 | Casos manuales y resultados reproducibles | [Casos de referencia](implementacion/casos/), [resultados por semilla](implementacion/resultados.json) |
-| Sustentación individual | [Guion y demostraciones](implementacion/SUSTENTACION.md) |
 
 ## Comandos para repetir las pruebas
 

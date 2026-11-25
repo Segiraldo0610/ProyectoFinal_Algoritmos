@@ -6,7 +6,7 @@ Pontificia Universidad Javeriana · Departamento de Ingeniería de Sistemas
 
 La implementación asigna secciones de las materias solicitadas, con sujeción a los cupos y a la compatibilidad de las franjas. Para cada estudiante, la salida registra las secciones asignadas, las solicitudes pendientes y las métricas de cobertura y preferencias. Tanto la interfaz gráfica como los comandos de terminal utilizan el mismo algoritmo y el mismo verificador.
 
-El [informe final](../docs/entrega-final/main.tex) presenta el modelo, el análisis de correctitud y la evaluación experimental. El [README principal](../README.md#ejecución-en-pycharm) describe cómo ejecutar la interfaz en PyCharm. El [guion de sustentación](SUSTENTACION.md) incluye un caso de backtracking que se puede comprobar a mano.
+El [informe final](../docs/entrega-final/main.tex) presenta el modelo, el análisis de correctitud y la evaluación experimental. El [README principal](../README.md#ejecución-en-pycharm) describe cómo ejecutar la interfaz en PyCharm.
 
 ## Correr las pruebas y los ejemplos
 
@@ -14,10 +14,10 @@ Los comandos se ejecutan desde la carpeta `implementacion` con Python 3.10 o pos
 
 ~~~text
 python -B -m unittest -v
-python -B horarios.py resolver casos/reparacion.json demo-base.json --metodo base
-python -B horarios.py resolver casos/reparacion.json demo.json --metodo backtracking
-python -B horarios.py verificar casos/reparacion.json demo.json
-python -B horarios.py resolver casos/reparacion.json demo-fuerza-bruta.json --metodo fuerza_bruta
+python -B horarios.py resolver casos/reparacion.json salida-base.json --metodo base
+python -B horarios.py resolver casos/reparacion.json salida-backtracking.json --metodo backtracking
+python -B horarios.py verificar casos/reparacion.json salida-backtracking.json
+python -B horarios.py resolver casos/reparacion.json salida-fuerza-bruta.json --metodo fuerza_bruta
 ~~~
 
 Para generar una entrada más grande y repetir las mediciones:

@@ -1,4 +1,4 @@
-"""Coordina los datos y el motor que usa la ventana de sustentación."""
+"""Gestiona los datos y las asignaciones de la interfaz de escritorio."""
 
 import csv
 from pathlib import Path

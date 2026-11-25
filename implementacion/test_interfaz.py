@@ -5,11 +5,11 @@ import unittest
 
 class DemoTest(unittest.TestCase):
     def test_genera_visualiza_y_verifica_una_instancia_csv(self):
-        from sesion_demo import Sesion
+        from sesion_interfaz import Sesion
 
         with TemporaryDirectory() as temp:
             s = Sesion()
-            s.generar_csv(Path(temp) / "demo", "pequeno", 202630)
+            s.generar_csv(Path(temp) / "csv", "pequeno", 202630)
             self.assertEqual(len(s.tablas), 11)
             columnas, filas = s.tabla("solicitudes")
             self.assertEqual(columnas, ["estudiante_id", "asignatura_id", "prioridad"])
@@ -22,12 +22,12 @@ class DemoTest(unittest.TestCase):
             self.assertTrue(any(e["pendientes"] for e in resultado["metricas"]["estudiantes"].values()))
 
     def test_cambiar_entrada_invalida_el_resultado_previsto(self):
-        from sesion_demo import Sesion
+        from sesion_interfaz import Sesion
 
         with TemporaryDirectory() as temp:
             carpeta = Path(temp)
             s = Sesion()
-            s.generar_csv(carpeta / "demo", "pequeno", 202630)
+            s.generar_csv(carpeta / "csv", "pequeno", 202630)
             s.asignar("propuesto")
             s.cargar_caso("reparacion", carpeta / "reparacion")
             self.assertIsNone(s.resultado)
@@ -36,7 +36,7 @@ class DemoTest(unittest.TestCase):
             self.assertEqual(s.verificar(), [])
 
     def test_carga_fallida_preserva_la_instancia_actual(self):
-        from sesion_demo import Sesion
+        from sesion_interfaz import Sesion
 
         with TemporaryDirectory() as temp:
             carpeta = Path(temp)
@@ -49,7 +49,7 @@ class DemoTest(unittest.TestCase):
             self.assertEqual(s.resultado["metodo"], "base")
 
     def test_verificador_detecta_cruce_y_bloquea_exportar_a_la_entrada(self):
-        from sesion_demo import Sesion
+        from sesion_interfaz import Sesion
 
         with TemporaryDirectory() as temp:
             base = Path(temp)

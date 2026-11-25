@@ -30,7 +30,7 @@
 \addto\shorthandsspanish{\spanishdeactivate{~<>}}
 
 \title{Algoritmo de asignación de horarios estudiantiles\\
-\large Entrega final: Implementación y sustentación}
+\large Entrega final}
 \author{Cesar Santiago Canro Cabra \and Samuel Enrique Giraldo Sabogal}
 \date{\today}
 
@@ -45,9 +45,9 @@ asignación de horarios estudiantiles en la Pontificia Universidad Javeriana,
 así como la estrategia de datos propuesta para probar y evaluar el algoritmo
 de solución. Se formalizan las entradas, las precondiciones, las restricciones
 de validez, las preferencias de los estudiantes y la salida esperada.
-A partir de esta definición se describe la implementación del algoritmo
-de asignación, se evalúan sus resultados en escenarios reproducibles y se
-presenta la interfaz utilizada para la sustentación.
+A partir de esta definición se describen los algoritmos implementados,
+se evalúan sus resultados en escenarios reproducibles y se presenta
+la interfaz para generar datos, asignar horarios y comprobar su validez.
 \end{abstract}
 
 \tableofcontents
@@ -1130,34 +1130,6 @@ búsqueda. También se puede consultar cómo se probó la lectura de los
 CSV, la validación de los horarios y el límite de nodos. En doce
 instancias pequeñas se comparó el backtracking con la enumeración
 exhaustiva.
-
-\section{Ejecución para la sustentación}
-
-La interfaz utiliza Python 3.10 o posterior con Tkinter. En PyCharm, se
-abre la carpeta completa del repositorio \repo, se selecciona un
-intérprete local y se ejecuta \texttt{implementacion/interfaz.py}
-mediante \textbf{Run 'interfaz'}. En Windows también se puede abrir
-\texttt{Abrir interfaz.pyw} con doble clic. La ventana carga el ejemplo
-CSV al iniciar.
-
-\begin{enumerate}
-  \item Seleccionar el escenario pequeño, dejar la semilla 202630 y pulsar
-        \textbf{Generar CSV}. En \textbf{Datos CSV}, seguir la solicitud de
-        A01 de E001 desde \texttt{solicitudes.csv} hasta un grupo en
-        \texttt{grupos.csv} y sus sesiones en \texttt{horarios.csv}.
-  \item Pulsar \textbf{Asignar horarios}. Para esa entrada, el método
-        propuesto atiende 10 de 15 solicitudes. Seleccionar E005 para
-        mostrar su horario y la materia A04 pendiente.
-  \item Pulsar \textbf{Verificar resultado} para mostrar el cumplimiento
-        de las cuatro restricciones. El botón \textbf{Guardar resultado
-        JSON} permite conservar la asignación y las métricas.
-  \item En \textbf{Casos para la sustentación}, abrir \textbf{Cambio
-        de sección}. Comparar \textbf{Base \(\cdot\) voraz} con
-        \textbf{Propuesto \(\cdot\) backtracking}. El caso
-        \textbf{Reasignación entre estudiantes} permite comparar
-        el backtracking con \textbf{Fuerza bruta}. Al pie de la ventana
-        aparece el número de nodos y el estado de la búsqueda.
-\end{enumerate}
 
 \section{Conclusión}
 
