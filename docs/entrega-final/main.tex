@@ -871,88 +871,108 @@ por minuto de hueco. También se resta la parte entera de la distancia
 total recorrida en metros dividida entre diez. Los huecos y las
 distancias se miden entre sesiones consecutivas del mismo día.
 
-\subsection{Construcción inicial}
+\subsection{Línea base voraz}
 
 La línea base visita las solicitudes en orden de identificador de
 estudiante y asignatura. Para cada solicitud toma la primera sección
 compatible que tenga cupo. Si no encuentra una sección, deja la solicitud
-pendiente.
+pendiente. Esta asignación se conserva como mejor resultado inicial del
+método propuesto.
 
-La propuesta construye dos candidatos. El primero arranca en el mismo
-orden que la línea base. El segundo atiende primero las asignaturas con
-menos secciones disponibles en la oferta. Los empates se resuelven por
-prioridad descendente, por menor cantidad total de secciones para las
-materias solicitadas por el estudiante y, finalmente, por identificador.
-En este segundo candidato, cada grupo elegible se evalúa según el puntaje
-individual que dejaría en ese momento.
+\subsection{Backtracking con poda}
 
-\subsection{Reparación local y elección del candidato}
+La búsqueda ordena las solicitudes por número creciente de secciones, por
+prioridad decreciente y, en caso de empate, por identificadores. En cada
+nivel se decide cómo atender un par estudiante--asignatura. Las
+alternativas son las secciones que tienen cupo y que son compatibles con
+el horario parcial del estudiante, además de la opción de dejar la
+solicitud pendiente. Cuando se vuelve a un nivel anterior, se deshace
+la última decisión y se restituyen los cupos y los contadores
+correspondientes. La implementación utiliza una pila explícita para
+recorrer el árbol en profundidad.
 
-En cada candidato se recorre una vez la lista de solicitudes pendientes.
-Para una solicitud de \(e\), se consideran las secciones de esa materia
-con cupo libre. Si una sección encaja de manera directa, se puede añadir.
-Si se cruza con un solo grupo que ya tiene \(e\), se busca otra sección
-de la materia de ese grupo que tenga cupo y que sea compatible con el
-resto del horario y con la sección nueva. Una reparación conserva la
-materia que ya se había asignado y agrega la solicitud pendiente.
+Para acotar lo que puede aportar una rama, sean \(D_a\) el número de
+solicitudes pendientes de explorar para la asignatura \(a\), y \(C_a\)
+el total de cupos libres de sus grupos. En ese estado se pueden atender
+como máximo \(u_a=\min(D_a,C_a)\) solicitudes adicionales de \(a\).
+La suma de las \(u_a\) da una cota de cobertura. Para la prioridad se
+suman los \(u_a\) valores más altos de las solicitudes restantes de cada
+materia. Como no se tienen en cuenta los cruces futuros al calcular la
+cota, esta puede sobreestimar el resultado alcanzable. Se descarta la
+rama cuando ni siquiera esa cobertura y prioridad pueden igualar las
+dos primeras componentes del mejor resultado conocido. Si la cota
+iguala ambas, se sigue explorando porque el puntaje de preferencias
+aún puede mejorar.
 
-Si existen varias reparaciones elegibles, se elige la de mayor puntaje
-individual. Se actualiza el horario junto con los cupos afectados. Tras
-reparar ambos candidatos, se devuelve el que obtenga la mayor terna
-\(F(H)\).
+\subsection{Pseudocódigo}
+
+El siguiente pseudocódigo usa llamadas recursivas para describir el
+recorrido. En el programa, cada nivel equivale a una entrada de la pila.
+
+\begin{verbatim}
+mejor <- resultado de la linea base voraz
+Explorar(i, estado):
+    si se alcanzo el limite:
+        registrar busqueda incompleta y detener el recorrido
+    contar este nodo
+    si la cota de cobertura y prioridad es inferior a mejor:
+        retornar
+    si i es el numero de solicitudes:
+        comparar estado con mejor y actualizar si mejora
+        retornar
+    para cada grupo compatible con cupo y la opcion pendiente:
+        aplicar la decision de la solicitud i
+        Explorar(i + 1, estado)
+        deshacer la decision y restituir los cupos
+
+devolver mejor y registrar si se agoto la busqueda
+\end{verbatim}
+
+El límite predeterminado es de 15\,000 nodos. Al alcanzarlo con ramas
+todavía por explorar, el programa conserva la mejor asignación válida
+encontrada e indica que se alcanzó el límite. Si se agotan las ramas
+sin superar ese presupuesto, el programa informa que se comprobó el
+óptimo bajo \(F(H)\).
 
 \subsection{Correctitud y terminación}
 
-Se mantiene el siguiente invariante. Todos los horarios parciales
-satisfacen las cuatro postcondiciones y, para cada grupo, el cupo libre
-almacenado es su capacidad menos el número de estudiantes asignados.
+En cada nivel, todo grupo asignado pertenece a una solicitud ya
+procesada, se asigna a lo sumo una sección por materia y las sesiones
+del estudiante son compatibles. El cupo libre de cada grupo es
+su capacidad menos el número de estudiantes asignados. El estado
+vacío cumple estas condiciones. Al avanzar, solo se asignan grupos
+compatibles con cupo y se actualiza el contador. Al retroceder se
+restaura el estado anterior. La opción pendiente conserva la validez
+del horario y consume la solicitud en la rama explorada.
 
-\begin{itemize}
-  \item \textbf{Inicialización.} Los horarios están vacíos y cada grupo
-        comienza con todos sus cupos libres. Se cumplen las restricciones.
-  \item \textbf{Construcción.} La solicitud que se procesa pertenece al
-        estudiante y se visita una sola vez. La sección elegida corresponde
-        a su materia, tiene cupo y es compatible con los grupos previos.
-        Se añade la sección y se descuenta un cupo.
-  \item \textbf{Reparación.} La materia nueva estaba pendiente. Si se
-        cambia una sección previa, se conserva su materia y se verifican
-        la compatibilidad de los grupos nuevos y sus cupos antes de aceptar
-        el cambio. Se devuelve el cupo de la sección retirada y se
-        descuentan los de las secciones incorporadas.
-\end{itemize}
-
-Cada recorrido considera una lista finita de solicitudes y cada intento
-examina un conjunto finito de secciones. La reparación añade una solicitud
-o deja el candidato igual. Como uno de los candidatos comienza con la
-misma asignación que produce la base, elegir el mejor de los dos tras la
-reparación conserva o mejora su terna. Esta propiedad garantiza un
-resultado al menos tan bueno como la base bajo el criterio definido. La
-búsqueda local puede dejar sin atender una solicitud que exigiría cambiar
-el horario de otro estudiante.
+Cada asignación válida corresponde a una secuencia de decisiones
+de grupo u omisión. La poda descarta únicamente ramas cuya cota
+queda por debajo del mejor par de cobertura y prioridad. Cuando se
+agota el árbol, la mejor asignación es óptima según \(F(H)\). Si se
+alcanza el límite, la salida sigue siendo válida y tiene un valor
+al menos igual al de la base, que fue el resultado inicial.
 
 \subsection{Complejidad}
 
-Sean \(R\) el número total de solicitudes, \(K\) el máximo de solicitudes
-de un estudiante, \(B\) el máximo de secciones de una asignatura,
-\(L\) el máximo de sesiones de un grupo y \(C\) el máximo de compañeros
-preferidos. Comparar dos grupos por sus sesiones toma \(O(L^2)\)
-cuando el par no está en caché. Sea \(M\) el costo de puntuar un horario
-individual. Una cota conservadora es
-\(M=O(KL\log(2+KL)+CK^2+K\log(2+K))\). Esta cota incluye ordenar
-las sesiones, consultar las coincidencias y construir las métricas.
+Sean \(R\) el número total de solicitudes, \(B\) el máximo número de
+secciones por asignatura, \(K\) el máximo de solicitudes de un estudiante
+y \(L\) el máximo número de sesiones de un grupo. La profundidad es a
+lo sumo \(R\) y cada nivel tiene como máximo \(B+1\) alternativas.
+El tamaño del árbol sin poda crece de forma exponencial con \(R\)
+cuando hay varias alternativas por solicitud.
 
-La construcción evalúa hasta \(B\) opciones por solicitud. En la reparación
-se pueden probar hasta \(B\) secciones nuevas y hasta \(B\) sustituciones
-para cada una. Una cota temporal del método propuesto es
-\begin{multline*}
- O\bigl(|G|\log(2+|G|)+|E|\log(2+|E|)+R\log(2+R)\\
-       {}+ R(1+B)^2(KL^2+M)+|E|M\bigr).
-\end{multline*}
-La cota usa el costo de comparación sin caché. El código conserva hasta
-100\,000 pares de grupos ya comparados. Los dos candidatos y sus listas
-de solicitudes ocupan \(O(R+|E|+|G|)\) espacio auxiliar, además de la
-caché y el espacio de trabajo para las métricas. La matriz de distancias
-es parte de la entrada y ocupa \(O(|S|^2)\).
+Sea \(V\) el número de nodos visitados, \(T_{\mathrm{base}}\) el tiempo de
+construcción voraz y \(T_F\) el costo de evaluar una asignación completa.
+Una cota conservadora para la ejecución es
+\[
+ O\bigl(T_{\mathrm{base}}+R\log(2+R)+V(BKL^2+T_F+1)\bigr).
+\]
+El término \(BKL^2\) acota la inspección de secciones y los cruces sin
+caché. Las cotas se actualizan en tiempo constante por decisión mediante
+contadores y sumas acumuladas por asignatura. El presupuesto limita
+\(V\) a 15\,000 por defecto. La pila y los datos de la búsqueda ocupan
+\(O(R+|E|+|G|)\) espacio auxiliar, además de la memoria usada para las
+métricas y la caché de hasta 100\,000 comparaciones de grupos.
 
 \subsection{Referencia exacta para casos pequeños}
 
@@ -985,21 +1005,21 @@ atendidas para cada método.
 \toprule
 Caso & Base voraz & Propuesto & Exacto \\
 \midrule
-Reparación & 1 de 2 & 2 de 2 & 2 de 2 \\
+Cambio de sección & 1 de 2 & 2 de 2 & 2 de 2 \\
 Cupo compartido & 1 de 2 & 1 de 2 & 1 de 2 \\
-Brecha frente al exacto & 2 de 4 & 2 de 4 & 3 de 4 \\
+Reasignación entre estudiantes & 2 de 4 & 3 de 4 & 3 de 4 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-En el caso de reparación, A1 ocupa el lunes de 08:00 a 09:00 y bloquea las
-dos opciones de B. A2, de 09:00 a 10:00, ofrece una alternativa para la misma
-materia. El método propuesto sustituye A1 por A2 y asigna B1. En el caso
-de cupo compartido, la base atiende una solicitud de prioridad 1 y la
-propuesta atiende una de prioridad 5 con la misma cobertura. En el caso
-de brecha, cambiar la sección de un estudiante permite liberar un cupo
-para otro. La búsqueda exacta encuentra esa combinación y atiende una
-solicitud adicional.
+En el caso de cambio de sección, A1 ocupa el lunes de 08:00 a 09:00 y
+bloquea las dos opciones de B. El backtracking retrocede y prueba A2,
+de 09:00 a 10:00. Así puede asignar también B1. En el caso de cupo
+compartido, la base atiende una solicitud de prioridad 1 y el
+backtracking atiende la de prioridad 5 con la misma cobertura. En el
+caso de reasignación, A1 queda libre para E2 al asignar A2 a E1.
+El backtracking y la enumeración coinciden en las tres solicitudes
+atendidas. La cuarta materia carece de grupos.
 
 \subsection{Resultados por tamaño}
 
@@ -1020,25 +1040,25 @@ Intel Core Ultra 7 255U.
 \cmidrule(lr){2-4}\cmidrule(lr){5-7}
 Estudiantes & Cobertura & Prioridad & Tiempo & Cobertura & Prioridad & Tiempo \\
 \midrule
-5   & 62,22\% & 28,00   & 0,05 ms & 62,22\% & 31,00   & 0,35 ms \\
-50  & 57,87\% & 429,67  & 0,61 ms & 58,27\% & 544,67  & 4,87 ms \\
-500 & 65,87\% & 5953,00 & 9,84 ms & 65,97\% & 6865,00 & 85,55 ms \\
+5   & 62,22\% & 28,00   & 0,05 ms & 62,22\% & 33,00   & 4,01 ms \\
+50  & 57,87\% & 429,67  & 0,26 ms & 58,13\% & 542,67  & 499,44 ms \\
+500 & 65,87\% & 5953,00 & 3,62 ms & 65,87\% & 5953,00 & 48,30 ms \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-En cinco instancias la propuesta atendió más solicitudes. En otras dos
-mantuvo la cobertura y aumentó la prioridad atendida. En las dos restantes
-se obtuvo la misma terna. En una instancia pequeña, la mejora en prioridad
-vino acompañada de un puntaje de preferencias menor. Este resultado refleja
-el orden de comparación adoptado. Construir dos candidatos y revisar las
-solicitudes pendientes aumentó el tiempo de resolución. Los resultados
-corresponden a instancias sintéticas de demanda desigual y cupos ajustados.
+En dos instancias medianas el backtracking atendió una solicitud más
+que la base. En otras cuatro instancias mantuvo la cobertura y aumentó
+la prioridad atendida. En las tres grandes se conservó la misma terna.
+La búsqueda se agotó en las tres instancias pequeñas. En las seis
+medianas y grandes se alcanzó el límite de 15\,000 nodos, por lo que
+se reporta la mejor asignación encontrada en cada caso. Los tiempos
+medidos dependen también de cuántas asignaciones completas se evaluaron.
 
-Los resultados por semilla y los casos de referencia se encuentran en el
-repositorio \repo. La implementación incluye 20 pruebas automatizadas
-que cubren la lectura de CSV, el verificador, los casos de referencia y
-el flujo de la interfaz.
+Los resultados por semilla y el estado de cada búsqueda se encuentran en
+el repositorio \repo. Las pruebas incluyen la lectura de CSV, la
+verificación de horarios, la comparación con la enumeración exhaustiva
+en doce instancias pequeñas y el comportamiento al llegar al límite.
 
 \section{Ejecución para la sustentación}
 
@@ -1060,10 +1080,12 @@ CSV al iniciar.
   \item Pulsar \textbf{Verificar resultado} para mostrar el cumplimiento
         de las cuatro restricciones. El botón \textbf{Guardar resultado
         JSON} permite conservar la asignación y las métricas.
-  \item Abrir el caso \textbf{Reparación} en \textbf{Casos para la
-        sustentación} y comparar el método base con el propuesto.
-        El caso \textbf{Brecha frente al exacto} sirve para mostrar
-        una limitación de la búsqueda local.
+  \item En \textbf{Casos para la sustentación}, abrir \textbf{Cambio
+        de sección}. Comparar \textbf{Base \(\cdot\) voraz} con
+        \textbf{Propuesto \(\cdot\) backtracking}. El caso
+        \textbf{Reasignación entre estudiantes} permite comparar
+        el backtracking con el método exacto. Al pie de la ventana
+        aparece el número de nodos y el estado de la búsqueda.
 \end{enumerate}
 
 \section{Conclusión}
@@ -1076,12 +1098,11 @@ del algoritmo que posteriormente se implemente. La estrategia de datos permite
 generar escenarios controlados y reproducibles, además de incorporar
 información cercana a situaciones reales.
 
-En las instancias sintéticas, el método propuesto mejoró la cobertura o
-la prioridad atendida en siete de nueve casos frente a la base voraz.
-La mejora requirió más tiempo de resolución. Los casos pequeños permitieron
-comprobar cuándo un cambio de sección recupera una solicitud y cuándo
-haría falta modificar la asignación de otro estudiante. La interfaz
-permite recorrer el proceso completo, desde los CSV hasta la verificación
-del horario.
+El backtracking con poda mejoró la cobertura o la prioridad atendida
+en seis de nueve instancias y comprobó el óptimo en las tres pequeñas.
+En las instancias grandes, el presupuesto de búsqueda mantuvo acotado
+el trabajo y el resultado coincidió con el de la base voraz. La interfaz
+permite recorrer el proceso desde los CSV y verificar la validez de la
+asignación, además de mostrar si se agotó la búsqueda.
 
 \end{document}

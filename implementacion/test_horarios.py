@@ -69,7 +69,7 @@ class HorariosTest(unittest.TestCase):
         self.assertEqual(m["estudiantes"]["E1"]["pendientes"], ["C"])
         self.assertIsNone(m["estudiantes"]["E3"]["profesor_promedio"])
 
-    def test_reparacion_alcanza_referencia_manual(self):
+    def test_retrocede_para_alcanzar_la_referencia_manual(self):
         from algoritmo import resolver, exacto
         from modelo import Instancia, evaluar, validar
         x = Instancia.desde(entrada([
@@ -83,17 +83,61 @@ class HorariosTest(unittest.TestCase):
         self.assertEqual(evaluar(x, h)["objetivo"], [2, 4, 0])
         self.assertEqual(evaluar(x, exacto(x))["objetivo"], [2, 4, 0])
 
-    def test_brecha_por_reasignacion_entre_estudiantes_y_caso_sin_grupo(self):
+    def test_retrocede_entre_estudiantes_y_deja_pendiente_materia_sin_oferta(self):
         from algoritmo import resolver, exacto
         from modelo import Instancia, evaluar, validar
         x = Instancia.desde(entrada([
             grupo("A1", "A", 480, 540, dia=1), grupo("A2", "A", 480, 540, dia=2),
             grupo("B1", "B", 480, 540, dia=2)],
             [estudiante("E1", A=3, C=1), estudiante("E2", A=3, B=3)]))
-        heuristico = resolver(x, "propuesto")
-        self.assertEqual(validar(x, heuristico), [])
-        self.assertEqual(evaluar(x, heuristico)["asignadas"], 2)
+        h = resolver(x, "propuesto")
+        self.assertEqual(validar(x, h), [])
+        self.assertEqual(h, {"E1": ["A2"], "E2": ["A1", "B1"]})
+        self.assertEqual(evaluar(x, h)["objetivo"], [3, 9, 0])
         self.assertEqual(evaluar(x, exacto(x))["objetivo"][:2], [3, 9])
+
+    def test_limite_de_nodos_conserva_una_asignacion_valida(self):
+        from algoritmo import resolver, backtracking
+        from modelo import Instancia, validar
+        x = Instancia.desde(entrada([
+            grupo("A1", "A", 480, 540), grupo("A2", "A", 540, 600),
+            grupo("B1", "B", 480, 510), grupo("B2", "B", 510, 540)],
+            [estudiante("E1", A=3, B=1)]))
+        parcial = backtracking(x, limite_nodos=1)
+        self.assertEqual(parcial.nodos, 1)
+        self.assertFalse(parcial.completa)
+        self.assertEqual(parcial.horarios, resolver(x, "base"))
+        self.assertEqual(validar(x, parcial.horarios), [])
+        completa = backtracking(x, limite_nodos=50)
+        self.assertTrue(completa.completa)
+        self.assertEqual(completa.horarios, {"E1": ["A2", "B1"]})
+
+    def test_poda_coincide_con_enumeracion_en_instancias_pequenas(self):
+        from random import Random
+        from algoritmo import backtracking, exacto
+        from modelo import Instancia, evaluar, validar
+
+        for semilla in range(12):
+            with self.subTest(semilla=semilla):
+                rng = Random(semilla)
+                grupos = []
+                for materia in "ABC":
+                    for j in range(2):
+                        inicio = rng.choice([480, 510, 540, 600])
+                        grupos.append(grupo(f"{materia}{j + 1}", materia, inicio, inicio + 60,
+                                            cupo=rng.randint(1, 2),
+                                            salon=rng.choice(["R1", "R2"])))
+                alumnos = [
+                    dict(estudiante("E1", A=rng.randint(1, 5), B=3, C=2),
+                         compacto=True, companeros=["E2"], profesor={"A1": 4}),
+                    estudiante("E2", A=2, B=rng.randint(1, 5), C=3),
+                ]
+                x = Instancia.desde(entrada(grupos, alumnos))
+                resultado = backtracking(x)
+                self.assertTrue(resultado.completa)
+                self.assertEqual(validar(x, resultado.horarios), [])
+                self.assertEqual(evaluar(x, resultado.horarios)["objetivo"],
+                                 evaluar(x, exacto(x))["objetivo"])
 
     def test_preferencia_profesor_decide_empate(self):
         from algoritmo import resolver
@@ -127,10 +171,12 @@ class HorariosTest(unittest.TestCase):
             x = Instancia.desde(leer(casos / f"{caso}.json"))
             for metodo in ("base", "propuesto", "exacto"):
                 with self.subTest(caso=caso, metodo=metodo):
-                    metricas = procesar(x, metodo)["metricas"]
-                    self.assertEqual(metricas["objetivo"], esperado[metodo])
+                    salida = procesar(x, metodo)
+                    self.assertEqual(salida["metricas"]["objetivo"], esperado[metodo])
+                    if metodo == "propuesto":
+                        self.assertTrue(salida["busqueda"]["completa"])
                     if metodo == "exacto":
-                        self.assertEqual(metricas["cobertura"] == 1, esperado["completa_posible"])
+                        self.assertEqual(salida["metricas"]["cobertura"] == 1, esperado["completa_posible"])
 
     def test_cli_end_to_end_y_semilla_reproducible(self):
         cli = Path(__file__).with_name("horarios.py")

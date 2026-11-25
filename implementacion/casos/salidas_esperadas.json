@@ -1,5 +1,5 @@
 {
   "reparacion": {"base": [1, 3, 0], "propuesto": [2, 4, 0], "exacto": [2, 4, 0], "completa_posible": true},
   "cupo": {"base": [1, 1, 0], "propuesto": [1, 5, 0], "exacto": [1, 5, 0], "completa_posible": false},
-  "brecha": {"base": [2, 6, 0], "propuesto": [2, 6, 0], "exacto": [3, 9, 0], "completa_posible": false}
+  "brecha": {"base": [2, 6, 0], "propuesto": [3, 9, 0], "exacto": [3, 9, 0], "completa_posible": false}
 }

@@ -10,7 +10,7 @@ from sesion_demo import CARPETA_PROGRAMA, Sesion
 
 ESCENARIOS = {"Pequeño · 5 estudiantes": "pequeno", "Mediano · 50 estudiantes": "mediano",
               "Grande · 500 estudiantes": "grande"}
-METODOS = {"Propuesto · con reparación": "propuesto", "Base · voraz": "base",
+METODOS = {"Propuesto · backtracking": "propuesto", "Base · voraz": "base",
            "Exacto · casos pequeños": "exacto"}
 DIAS = ("Lunes", "Martes", "Miércoles", "Jueves", "Viernes")
 REGLAS = ("Las franjas de cada estudiante son compatibles.",
@@ -185,8 +185,8 @@ class Aplicacion:
         boton("Cargar ejemplo", self.cargar_ejemplo)
         casos = ttk.Menubutton(panel, text="Casos para la sustentación")
         menu = tk.Menu(casos, tearoff=False)
-        for caso, etiqueta in (("reparacion", "Reparación"), ("cupo", "Cupo compartido"),
-                               ("brecha", "Brecha frente al exacto")):
+        for caso, etiqueta in (("reparacion", "Cambio de sección"), ("cupo", "Cupo compartido"),
+                               ("brecha", "Reasignación entre estudiantes")):
             menu.add_command(label=etiqueta, command=lambda c=caso: self.ejecutar(
                 "Cargar caso", lambda: self.cargar_caso(c)))
         casos.configure(menu=menu)
@@ -288,8 +288,8 @@ class Aplicacion:
             self.sesion.cargar_csv(carpeta)
         else:
             self.sesion.cargar_caso(caso, carpeta)
-        self.mostrar_entrada({"reparacion": "Caso de reparación", "cupo": "Caso de cupo compartido",
-                              "brecha": "Caso de brecha frente al exacto"}[caso])
+        self.mostrar_entrada({"reparacion": "Caso de cambio de sección", "cupo": "Caso de cupo compartido",
+                              "brecha": "Caso de reasignación entre estudiantes"}[caso])
 
     def mostrar_entrada(self, etiqueta):
         self.fuente.set(etiqueta)
@@ -334,7 +334,13 @@ class Aplicacion:
         self.boton_verificar.state(["!disabled"])
         self.boton_guardar.state(["!disabled"])
         self.pestanas.select(self.pagina_agenda)
-        self.estado.set(f"{self.metodo.get()} · {resultado['tiempo_s'] * 1000:.2f} ms")
+        resumen = f"{self.metodo.get()} · {resultado['tiempo_s'] * 1000:.2f} ms"
+        busqueda = resultado.get("busqueda")
+        if busqueda:
+            detalle = ("Óptimo comprobado" if busqueda["completa"]
+                       else "Límite alcanzado · mejor solución encontrada")
+            resumen += f" · {busqueda['nodos']:,} nodos · {detalle}".replace(",", ".")
+        self.estado.set(resumen)
 
     def mostrar_estudiante(self):
         e = self.estudiante.get()
@@ -361,7 +367,6 @@ class Aplicacion:
             self.kpi_validacion.set("Válida")
             self.detalle_verificacion.set("\n\n".join(f"Cumple · {regla}" for regla in REGLAS))
         self.pestanas.select(self.pagina_verificar)
-        self.estado.set("Verificación independiente de cupos, solicitudes y cruces.")
 
     def guardar(self):
         elegida = filedialog.asksaveasfilename(parent=self.raiz, title="Guardar la asignación y sus métricas",

@@ -6,7 +6,7 @@ from platform import python_version
 import sys
 from time import perf_counter
 
-from algoritmo import exacto, resolver
+from algoritmo import LIMITE_NODOS, backtracking, exacto, resolver
 from archivos_csv import escribir_tablas, leer_tablas
 from datos import ESCENARIOS, generar
 from modelo import Instancia, evaluar, validar
@@ -37,14 +37,23 @@ def generar_csv(escenario, semilla, carpeta):
                 python=python_version()), carpeta / "meta.json")
 
 
-def procesar(x, metodo):
+def procesar(x, metodo, limite_nodos=LIMITE_NODOS):
     inicio = perf_counter()
-    h = exacto(x) if metodo == "exacto" else resolver(x, metodo)
+    if metodo in ("propuesto", "backtracking"):
+        busqueda = backtracking(x, limite_nodos)
+        h = busqueda.horarios
+    else:
+        busqueda = None
+        h = exacto(x) if metodo == "exacto" else resolver(x, metodo)
     tiempo = perf_counter() - inicio
     errores = validar(x, h)
     if errores:
         raise RuntimeError("el solucionador devolvió una salida inválida: " + ", ".join(errores))
-    return dict(metodo=metodo, tiempo_s=round(tiempo, 6), horarios=h, metricas=evaluar(x, h))
+    salida = dict(metodo=metodo, tiempo_s=round(tiempo, 6), horarios=h, metricas=evaluar(x, h))
+    if busqueda is not None:
+        salida["busqueda"] = dict(nodos=busqueda.nodos, limite_nodos=busqueda.limite_nodos,
+                                  completa=busqueda.completa)
+    return salida
 
 
 def comparar(semillas):
@@ -58,6 +67,8 @@ def comparar(semillas):
                 resultado = procesar(x, metodo)
                 fila[metodo] = {k: v for k, v in resultado["metricas"].items() if k != "estudiantes"}
                 fila[metodo]["tiempo_s"] = resultado["tiempo_s"]
+                if "busqueda" in resultado:
+                    fila[metodo]["busqueda"] = resultado["busqueda"]
             filas.append(fila)
     return filas
 
@@ -73,7 +84,10 @@ def main(argv=None):
     sol = sub.add_parser("resolver", help="asigna grupos y reporta métricas")
     sol.add_argument("entrada", type=Path)
     sol.add_argument("salida", type=Path)
-    sol.add_argument("--metodo", choices=("base", "propuesto", "exacto"), default="propuesto")
+    sol.add_argument("--metodo", choices=("base", "propuesto", "backtracking", "exacto"),
+                     default="propuesto")
+    sol.add_argument("--limite-nodos", type=int, default=LIMITE_NODOS,
+                     help="máximo de nodos del backtracking")
     ver = sub.add_parser("verificar", help="valida una asignación y recalcula sus métricas")
     ver.add_argument("entrada", type=Path)
     ver.add_argument("resultado", type=Path)
@@ -97,7 +111,7 @@ def main(argv=None):
                     raise ValueError("use una ruta diferente para el resultado")
                 if args.entrada.is_dir() and args.salida.resolve().is_relative_to(args.entrada.resolve()):
                     raise ValueError("guarde el resultado fuera de la carpeta CSV de entrada")
-                emitir(procesar(x, args.metodo), args.salida)
+                emitir(procesar(x, args.metodo, args.limite_nodos), args.salida)
             else:
                 h = leer(args.resultado)["horarios"]
                 errores = validar(x, h)

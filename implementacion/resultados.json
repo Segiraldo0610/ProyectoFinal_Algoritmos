@@ -16,28 +16,33 @@
       ],
       "prioridad_atendida": 30,
       "solicitadas": 15,
-      "tiempo_s": 7.1e-05
+      "tiempo_s": 0.000053
     },
     "escenario": "pequeno",
     "estudiantes": 5,
     "grupos": 10,
     "propuesto": {
       "asignadas": 10,
-      "calidad": 1489,
+      "busqueda": {
+        "completa": true,
+        "limite_nodos": 15000,
+        "nodos": 814
+      },
+      "calidad": 1505,
       "clases_en_dias_libres": 0,
       "cobertura": 0.6666666666666666,
       "coincidencias": 0,
-      "distancia_m": 713,
-      "huecos_min": 90,
+      "distancia_m": 551,
+      "huecos_min": 60,
       "min_fuera": 180,
       "objetivo": [
         10,
         34,
-        1489
+        1505
       ],
       "prioridad_atendida": 34,
       "solicitadas": 15,
-      "tiempo_s": 0.000553
+      "tiempo_s": 0.004249
     },
     "semilla": 202630
   },
@@ -58,28 +63,33 @@
       ],
       "prioridad_atendida": 27,
       "solicitadas": 15,
-      "tiempo_s": 4.2e-05
+      "tiempo_s": 0.000048
     },
     "escenario": "pequeno",
     "estudiantes": 5,
     "grupos": 10,
     "propuesto": {
       "asignadas": 8,
-      "calidad": 1269,
+      "busqueda": {
+        "completa": true,
+        "limite_nodos": 15000,
+        "nodos": 876
+      },
+      "calidad": 1380,
       "clases_en_dias_libres": 1,
       "cobertura": 0.5333333333333333,
       "coincidencias": 0,
-      "distancia_m": 514,
+      "distancia_m": 0,
       "huecos_min": 0,
       "min_fuera": 60,
       "objetivo": [
         8,
         32,
-        1269
+        1380
       ],
       "prioridad_atendida": 32,
       "solicitadas": 15,
-      "tiempo_s": 0.000246
+      "tiempo_s": 0.005641
     },
     "semilla": 202631
   },
@@ -100,28 +110,33 @@
       ],
       "prioridad_atendida": 27,
       "solicitadas": 15,
-      "tiempo_s": 4.2e-05
+      "tiempo_s": 0.000044
     },
     "escenario": "pequeno",
     "estudiantes": 5,
     "grupos": 10,
     "propuesto": {
       "asignadas": 10,
-      "calidad": 780,
+      "busqueda": {
+        "completa": true,
+        "limite_nodos": 15000,
+        "nodos": 470
+      },
+      "calidad": 1200,
       "clases_en_dias_libres": 2,
       "cobertura": 0.6666666666666666,
       "coincidencias": 0,
       "distancia_m": 0,
-      "huecos_min": 210,
-      "min_fuera": 510,
+      "huecos_min": 390,
+      "min_fuera": 390,
       "objetivo": [
         10,
-        27,
-        780
+        33,
+        1200
       ],
-      "prioridad_atendida": 27,
+      "prioridad_atendida": 33,
       "solicitadas": 15,
-      "tiempo_s": 0.000264
+      "tiempo_s": 0.002153
     },
     "semilla": 202632
   },
@@ -142,28 +157,33 @@
       ],
       "prioridad_atendida": 414,
       "solicitadas": 250,
-      "tiempo_s": 0.00057
+      "tiempo_s": 0.000247
     },
     "escenario": "mediano",
     "estudiantes": 50,
     "grupos": 45,
     "propuesto": {
-      "asignadas": 142,
-      "calidad": 11038,
-      "clases_en_dias_libres": 19,
-      "cobertura": 0.568,
-      "coincidencias": 27,
-      "distancia_m": 9738,
-      "huecos_min": 4890,
-      "min_fuera": 2160,
+      "asignadas": 141,
+      "busqueda": {
+        "completa": false,
+        "limite_nodos": 15000,
+        "nodos": 15000
+      },
+      "calidad": 3032,
+      "clases_en_dias_libres": 23,
+      "cobertura": 0.564,
+      "coincidencias": 25,
+      "distancia_m": 11523,
+      "huecos_min": 4800,
+      "min_fuera": 2730,
       "objetivo": [
-        142,
-        530,
-        11038
+        141,
+        525,
+        3032
       ],
-      "prioridad_atendida": 530,
+      "prioridad_atendida": 525,
       "solicitadas": 250,
-      "tiempo_s": 0.004815
+      "tiempo_s": 0.367618
     },
     "semilla": 202630
   },
@@ -184,28 +204,33 @@
       ],
       "prioridad_atendida": 438,
       "solicitadas": 250,
-      "tiempo_s": 0.000664
+      "tiempo_s": 0.000292
     },
     "escenario": "mediano",
     "estudiantes": 50,
     "grupos": 45,
     "propuesto": {
       "asignadas": 145,
-      "calidad": 13889,
-      "clases_en_dias_libres": 10,
+      "busqueda": {
+        "completa": false,
+        "limite_nodos": 15000,
+        "nodos": 15000
+      },
+      "calidad": 3828,
+      "clases_en_dias_libres": 21,
       "cobertura": 0.58,
-      "coincidencias": 26,
-      "distancia_m": 9114,
-      "huecos_min": 3000,
-      "min_fuera": 1500,
+      "coincidencias": 15,
+      "distancia_m": 8617,
+      "huecos_min": 4620,
+      "min_fuera": 1980,
       "objetivo": [
         145,
-        547,
-        13889
+        546,
+        3828
       ],
-      "prioridad_atendida": 547,
+      "prioridad_atendida": 546,
       "solicitadas": 250,
-      "tiempo_s": 0.00473
+      "tiempo_s": 0.199497
     },
     "semilla": 202631
   },
@@ -226,28 +251,33 @@
       ],
       "prioridad_atendida": 437,
       "solicitadas": 250,
-      "tiempo_s": 0.000588
+      "tiempo_s": 0.00025
     },
     "escenario": "mediano",
     "estudiantes": 50,
     "grupos": 45,
     "propuesto": {
       "asignadas": 150,
-      "calidad": 10785,
+      "busqueda": {
+        "completa": false,
+        "limite_nodos": 15000,
+        "nodos": 15000
+      },
+      "calidad": 5238,
       "clases_en_dias_libres": 15,
       "cobertura": 0.6,
-      "coincidencias": 31,
-      "distancia_m": 11356,
-      "huecos_min": 4170,
-      "min_fuera": 1890,
+      "coincidencias": 23,
+      "distancia_m": 13735,
+      "huecos_min": 3690,
+      "min_fuera": 2250,
       "objetivo": [
         150,
         557,
-        10785
+        5238
       ],
       "prioridad_atendida": 557,
       "solicitadas": 250,
-      "tiempo_s": 0.005068
+      "tiempo_s": 0.931215
     },
     "semilla": 202632
   },
@@ -268,13 +298,18 @@
       ],
       "prioridad_atendida": 6117,
       "solicitadas": 3000,
-      "tiempo_s": 0.010674
+      "tiempo_s": 0.003632
     },
     "escenario": "grande",
     "estudiantes": 500,
     "grupos": 120,
     "propuesto": {
       "asignadas": 2013,
+      "busqueda": {
+        "completa": false,
+        "limite_nodos": 15000,
+        "nodos": 15000
+      },
       "calidad": -62849,
       "clases_en_dias_libres": 242,
       "cobertura": 0.671,
@@ -289,7 +324,7 @@
       ],
       "prioridad_atendida": 6117,
       "solicitadas": 3000,
-      "tiempo_s": 0.086471
+      "tiempo_s": 0.051117
     },
     "semilla": 202630
   },
@@ -310,28 +345,33 @@
       ],
       "prioridad_atendida": 6024,
       "solicitadas": 3000,
-      "tiempo_s": 0.009331
+      "tiempo_s": 0.003337
     },
     "escenario": "grande",
     "estudiantes": 500,
     "grupos": 120,
     "propuesto": {
-      "asignadas": 1990,
-      "calidad": 64883,
-      "clases_en_dias_libres": 134,
-      "cobertura": 0.6633333333333333,
-      "coincidencias": 292,
-      "distancia_m": 164278,
-      "huecos_min": 61500,
-      "min_fuera": 22200,
+      "asignadas": 1988,
+      "busqueda": {
+        "completa": false,
+        "limite_nodos": 15000,
+        "nodos": 15000
+      },
+      "calidad": -59915,
+      "clases_en_dias_libres": 239,
+      "cobertura": 0.6626666666666666,
+      "coincidencias": 216,
+      "distancia_m": 248558,
+      "huecos_min": 93930,
+      "min_fuera": 28650,
       "objetivo": [
-        1990,
-        7337,
-        64883
+        1988,
+        6024,
+        -59915
       ],
-      "prioridad_atendida": 7337,
+      "prioridad_atendida": 6024,
       "solicitadas": 3000,
-      "tiempo_s": 0.085348
+      "tiempo_s": 0.048263
     },
     "semilla": 202631
   },
@@ -352,28 +392,33 @@
       ],
       "prioridad_atendida": 5718,
       "solicitadas": 3000,
-      "tiempo_s": 0.009515
+      "tiempo_s": 0.00389
     },
     "escenario": "grande",
     "estudiantes": 500,
     "grupos": 120,
     "propuesto": {
-      "asignadas": 1934,
-      "calidad": 51167,
-      "clases_en_dias_libres": 142,
-      "cobertura": 0.6446666666666667,
-      "coincidencias": 278,
-      "distancia_m": 210779,
-      "huecos_min": 75300,
-      "min_fuera": 27810,
+      "asignadas": 1927,
+      "busqueda": {
+        "completa": false,
+        "limite_nodos": 15000,
+        "nodos": 15000
+      },
+      "calidad": -81356,
+      "clases_en_dias_libres": 231,
+      "cobertura": 0.6423333333333333,
+      "coincidencias": 204,
+      "distancia_m": 337771,
+      "huecos_min": 110250,
+      "min_fuera": 34380,
       "objetivo": [
-        1934,
-        7141,
-        51167
+        1927,
+        5718,
+        -81356
       ],
-      "prioridad_atendida": 7141,
+      "prioridad_atendida": 5718,
       "solicitadas": 3000,
-      "tiempo_s": 0.084825
+      "tiempo_s": 0.045535
     },
     "semilla": 202632
   }

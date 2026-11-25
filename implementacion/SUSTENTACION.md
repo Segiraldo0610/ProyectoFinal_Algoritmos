@@ -2,85 +2,31 @@
 
 Cesar Santiago Canro Cabra · Samuel Enrique Giraldo Sabogal
 
-Esta guía sirve para ensayar la sustentación individual. La idea es empezar con los datos, correr un caso y explicar qué decisiones tomó el programa.
+## Corrida en PyCharm
 
-## Ruta sin consola
+Abre `implementacion/interfaz.py` y selecciona **Run 'interfaz'**. Con **Pequeño** y la semilla **202630**, pulsa **Generar CSV**. En **Datos CSV**, sigue la solicitud de A05 de E005 hasta A05-G1. La capacidad está en `grupos.csv` y las dos sesiones están en `horarios.csv`. El valor `810` equivale a las 13:30.
 
-Abre la ventana con los [pasos del README](../README.md#ejecución-en-pycharm).
-Elige **Pequeño**, deja la semilla 202630 y pulsa **Generar CSV**. En **Datos CSV**,
-sigue la solicitud de A01 de E001 desde `solicitudes.csv` hasta su grupo en
-`grupos.csv` y su sesión en `horarios.csv`.
+Pulsa **Asignar horarios** con **Propuesto · backtracking**. Se atienden 10 de 15 solicitudes y la búsqueda comprueba el óptimo. Selecciona E005 para ver sus dos materias asignadas y A04 pendiente. Pulsa **Verificar resultado** para revisar las cuatro reglas.
 
-Pulsa **Asignar horarios**. En este ejemplo se cubren 10 de 15 solicitudes.
-Abre E005 para mostrar una materia pendiente y luego pulsa **Verificar resultado**.
-Aquí puedes explicar por qué un horario puede ser válido aunque queden
-materias sin asignar.
+## Qué mostrar en seis minutos
 
-## Guion de seis minutos
-
-| Tiempo | Qué mostrar | Qué explicar |
+| Tiempo | Pantalla o archivo | Qué explicar |
 | --- | --- | --- |
-| 0:00–1:15 | Generador y pestaña Datos CSV | Cómo se repite una entrada con la semilla y cómo se relacionan solicitudes, grupos y sesiones. |
-| 1:15–2:15 | Horario de E005 y validación | Qué recibió el estudiante, qué le falta y cuáles son las cuatro reglas. |
-| 2:15–3:45 | Caso de reparación | Qué grupo escoge la base y qué cambio permite atender otra solicitud. |
-| 3:45–4:45 | Verificador y código de `construir` | Cómo se mantienen los cupos y la validez al agregar o cambiar un grupo. |
-| 4:45–6:00 | Resultados y caso de brecha | Qué mejoró con 5, 50 y 500 estudiantes y en qué caso el método exacto encuentra una mejor asignación. |
+| 0:00–1:30 | Generador y tres CSV | Cómo se crea una instancia, para qué se guarda la semilla y cómo se enlazan solicitudes, grupos y sesiones. |
+| 1:30–2:30 | Horario de E005 y validación | Qué recibió, qué le falta y cuáles son las cuatro reglas. |
+| 2:30–4:00 | Caso **Cambio de sección** | Qué eligió la base y cómo el backtracking deshace una decisión. |
+| 4:00–5:00 | `algoritmo.py`, función `backtracking()` | Dónde se genera una rama, cuándo se poda y cómo se devuelve un cupo al retroceder. |
+| 5:00–6:00 | Caso **Reasignación entre estudiantes** y tabla de resultados | Cuándo coincide con la enumeración y qué significa alcanzar el límite. |
 
-## Recuperar una materia
+## Cómo explicar el backtracking
 
-En la ventana, abre **Casos para la sustentación → Reparación**. El lunes,
-A1 va de 08:00 a 09:00 y A2 de 09:00 a 10:00. B1 va de 08:00 a 08:30 y B2 de
-08:30 a 09:00. El estudiante pide A con prioridad 3 y B con prioridad 1.
+En **Casos para la sustentación → Cambio de sección**, corre **Base · voraz** y después **Propuesto · backtracking**. La base toma A1 de 08:00 a 09:00 y cubre 1 de 2. Al explorar esa elección, el backtracking comprueba que ambas opciones de B se cruzan. Vuelve sobre la decisión, restaura el cupo y prueba A2 de 09:00 a 10:00. Así obtiene A2 y B1 y cubre 2 de 2.
 
-- Con **Base · voraz**, A1 queda asignada y bloquea las dos secciones de B. Se cubre 1 de 2.
-- Con **Propuesto · con reparación**, A2 reemplaza a A1 y deja espacio para B. Se cubren 2 de 2. B2 puede terminar justo cuando empieza A2.
-- La terna de la base es `[1, 3, 0]`. La del propuesto y el exacto es `[2, 4, 0]`. Puede haber horarios distintos con la misma terna.
-
-Pulsa **Verificar resultado** después de la reparación.
-
-## Mostrar el límite
-
-Abre **Brecha frente al exacto**. Compara **Propuesto · con reparación** con
-**Exacto · casos pequeños**. La propuesta deja a E1 en A1 y a E2 en B1. El
-exacto encuentra una combinación de tres asignaciones al poner a E1 en A2
-y a E2 en A1 y B1. La materia C carece de grupos, así que el máximo es
-3 de 4 solicitudes.
+En **Reasignación entre estudiantes**, compara los tres métodos. El voraz atiende 2 de 4. El backtracking y el exacto atienden 3 de 4 al considerar E1 en A2 y E2 en A1 y B1. C queda pendiente porque no tiene grupos.
 
 ## Preguntas para practicar
 
-**¿Cómo se construyen y validan los CSV?**  
-Los catálogos contienen los identificadores. Los grupos enlazan asignatura, profesor y salón. Las sesiones y solicitudes tienen sus propias filas. El lector comprueba encabezados, claves y referencias antes de construir el horario. Para demostrarlo, ejecuta el programa con la carpeta `ejemplo_csv` e identifica en `horarios.csv` dos sesiones con el mismo `grupo_id`.
-
-**¿Cómo saben que la salida es válida?**  
-El horario vacío cumple las reglas. Cada agregado y cada cambio de grupo
-revisa cupos y cruces, así que las reglas siguen cumpliéndose después de cada
-paso. El verificador ordena las sesiones y cuenta las matrículas de nuevo
-a partir de lo que quedó asignado.
-
-**¿Dos clases de 08:00–09:00 y 09:00–10:00 se cruzan?**  
-Pueden coexistir. Para que exista cruce, ambos inicios deben ser estrictamente anteriores al fin de la otra clase y deben ocurrir el mismo día. El desplazamiento entre salones se registra como preferencia de calidad.
-
-**¿Por qué un mejor puntaje de profesor puede acompañar un peor resultado?**  
-La comparación empieza por cobertura y sigue por prioridad. El puntaje de preferencias decide cuando ambas coinciden. El reporte conserva las medidas originales para interpretar el intercambio.
-
-**¿Qué cambia si una materia tiene un solo grupo o no tiene ninguno?**  
-Con una sola sección, el inicio guiado prioriza esa solicitud frente a otras con más alternativas. Cuando no hay oferta, la solicitud permanece pendiente. El caso de un solo cupo permite mostrar que el inicio guiado puede atender al estudiante con mayor prioridad.
-
-**¿Cómo se sabe que el resultado del oráculo sí es óptimo?**  
-La enumeración genera todas las combinaciones de una sección u omisión por cada solicitud. Descarta salidas inválidas y conserva el mayor objetivo. Esto es viable en los casos pequeños porque su espacio de combinaciones es reducido.
-
-**¿Por qué conservar dos inicios?**  
-Cambiar el orden de las solicitudes cambia qué cupos se llenan primero.
-Una reparación añade una materia o deja el horario igual. Al conservar
-también el horario que empezó con el mismo orden que la base, siempre hay
-un candidato que iguala o supera el resultado base.
-
-**¿Qué demuestra la medición?**  
-Ambos métodos recibieron las mismas nueve entradas. La propuesta mejoró cobertura en cinco, mejoró prioridad con igual cobertura en dos y empató en dos. La comparación mide comportamiento bajo demanda, cupos y preferencias simulados. Para extrapolar al campus se requieren entradas reales o anonimizadas.
-
-**¿Cómo ampliarían el algoritmo?**  
-Una reparación que permita cambios entre estudiantes podría resolver el caso de brecha. Para incorporarla se necesitarían límites de búsqueda y pruebas específicas de que las reasignaciones preservan cupos y horarios de todos los afectados.
-
-## Ensayo entre los dos
-
-Cada integrante ejecuta las dos demos con el mismo paquete. El otro le pide justificar un paso de la prueba, interpretar una fila de resultados y predecir el efecto de cambiar una franja o un cupo. Luego intercambian roles. En la sustentación usen ejemplos de contribuciones propias y expliquen qué parte verificó cada integrante.
+- **¿Qué se revierte al retroceder?** Se quita el grupo del horario, se devuelve su cupo y se restauran los contadores de solicitudes y prioridades. Si la elección fue omitir, solo se restaura el registro de la solicitud.
+- **¿Cuándo se descarta una rama?** Se calcula cuántas solicitudes podrían caber como máximo con los cupos restantes. Si ni ese máximo mejora el mejor resultado encontrado, se descarta. Con igual cobertura se revisa la cota de prioridad. Con ambas iguales se explora por las preferencias.
+- **¿Qué significa «Óptimo comprobado»?** Se terminó el recorrido y la poda descartó solo ramas que no podían mejorar la solución. Si aparece «Límite alcanzado», se muestra la mejor solución válida que se encontró.
+- **¿Qué pasa con más estudiantes?** En los escenarios medianos y grandes se alcanzó el límite de 15.000 nodos. En las tres instancias grandes se conservó el resultado voraz. La tabla del informe registra los tiempos y métricas.

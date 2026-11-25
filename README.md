@@ -10,8 +10,9 @@ registra las secciones asignadas y las solicitudes pendientes. Un verificador
 independiente comprueba que la asignación cumpla las restricciones del problema.
 
 La estrategia de datos utiliza once archivos CSV relacionados por
-identificadores. Los experimentos comparan el método propuesto con una
-asignación voraz de referencia y, en casos pequeños, con una búsqueda exhaustiva.
+identificadores. El método propuesto utiliza backtracking con poda y parte
+de una asignación voraz. Se compara con esa base y, en casos pequeños, con
+una enumeración exhaustiva.
 
 ## Informes
 
@@ -50,9 +51,12 @@ clic en [Abrir interfaz.pyw](Abrir%20interfaz.pyw).
 3. Pulsa **Verificar resultado** para comprobar las cuatro restricciones.
    **Guardar resultado JSON** exporta la asignación y sus métricas.
 
-En **Casos para la sustentación → Reparación**, ejecuta **Base · voraz**
-y después **Propuesto · con reparación**. En este caso, cambiar una sección
-permite pasar de una a dos solicitudes atendidas.
+En **Casos para la sustentación → Cambio de sección**, ejecuta
+**Base · voraz** y después **Propuesto · backtracking**. El backtracking
+retrocede y prueba otra sección, con lo que pasa de una a dos solicitudes.
+Al pie de la ventana se indica si se comprobó el óptimo o se alcanzó el
+límite de 15.000 nodos. En **Reasignación entre estudiantes**, ambos
+métodos de búsqueda coinciden en **3 de 4**, frente a **2 de 4** del voraz.
 
 ## Archivos del proyecto
 

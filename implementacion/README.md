@@ -6,16 +6,16 @@ Pontificia Universidad Javeriana · Departamento de Ingeniería de Sistemas
 
 La implementación asigna secciones de las materias solicitadas, con sujeción a los cupos y a la compatibilidad de las franjas. Para cada estudiante, la salida registra las secciones asignadas, las solicitudes pendientes y las métricas de cobertura y preferencias. Tanto la interfaz gráfica como los comandos de terminal utilizan el mismo algoritmo y el mismo verificador.
 
-El [informe final](../docs/entrega-final/main.tex) presenta el modelo, el análisis de correctitud y la evaluación experimental. El [README principal](../README.md#ejecución-en-pycharm) describe cómo ejecutar la interfaz en PyCharm. El [guion de sustentación](SUSTENTACION.md) incluye un caso de reparación que se puede comprobar a mano.
+El [informe final](../docs/entrega-final/main.tex) presenta el modelo, el análisis de correctitud y la evaluación experimental. El [README principal](../README.md#ejecución-en-pycharm) describe cómo ejecutar la interfaz en PyCharm. El [guion de sustentación](SUSTENTACION.md) incluye un caso de backtracking que se puede comprobar a mano.
 
 ## Correr las pruebas y los ejemplos
 
-Los comandos se ejecutan desde la carpeta `implementacion` con Python 3.10 o posterior. Primero puedes comprobar las pruebas y el caso en que la reparación recupera una materia.
+Los comandos se ejecutan desde la carpeta `implementacion` con Python 3.10 o posterior. El primer ejemplo muestra cómo el backtracking recupera una materia al volver sobre una decisión.
 
 ~~~text
 python -B -m unittest -v
 python -B horarios.py resolver casos/reparacion.json demo-base.json --metodo base
-python -B horarios.py resolver casos/reparacion.json demo.json
+python -B horarios.py resolver casos/reparacion.json demo.json --metodo backtracking
 python -B horarios.py verificar casos/reparacion.json demo.json
 python -B horarios.py resolver casos/reparacion.json demo-exacto.json --metodo exacto
 ~~~
@@ -38,7 +38,7 @@ El comando `verificar` vuelve a calcular las métricas usando los grupos que apa
 | Estudiantes, grupos y solicitudes | IDs únicos. Cada estudiante declara las asignaturas que solicita y sus prioridades. Un grupo tiene asignatura, profesor, salón, capacidad y franjas. |
 | Solapamiento | Cada franja contiene día, inicio y fin. Con el mismo día se cruzan si cada una empieza antes de que termine la otra. Dos clases que comparten solamente el extremo se permiten. |
 | Capacidad global | Se cuenta cuántos estudiantes reciben cada grupo. El contador del algoritmo mide cupos disponibles. |
-| Una sección por asignatura y solo solicitudes | Se procesa un par estudiante–asignatura por vez. Una reparación conserva la materia del grupo que reemplaza. |
+| Una sección por asignatura y solo solicitudes | Se procesa un par estudiante–asignatura por vez. El backtracking elige una sección o deja la solicitud pendiente. |
 | Salida `H` | El objeto `horarios` contiene una lista de grupos por estudiante, incluida la lista vacía. `metricas.estudiantes` informa las solicitudes pendientes. |
 
 ### Entrada CSV
@@ -84,27 +84,24 @@ Estas ponderaciones se usan para comparar los resultados y elegir grupos en el i
 
 ## Cómo se arman y comprueban los horarios
 
-1. **Base voraz.** Recorre las solicitudes por ID de estudiante y de materia. Usa el primer grupo que tenga cupo y encaje en el horario.
-2. **Dos puntos de partida.** El método propuesto arma un horario con ese orden y otro que atiende primero las solicitudes con menos secciones. Desempata por prioridad, menor flexibilidad del estudiante e identificadores. En este segundo intento escoge el grupo que deje el mejor puntaje individual en ese momento.
-3. **Reparación.** Revisa una vez las materias pendientes en cada intento. Si hay un grupo libre que encaja, lo agrega. Si solo una clase lo bloquea, prueba mover esa clase a otro grupo de la misma materia. Antes de aplicar el cambio comprueba cruces y cupos.
-4. **Elección y verificación.** Compara los dos resultados y devuelve el que tenga mejor terna. El verificador vuelve a ordenar las sesiones y a contar los cupos desde la salida para revisar las cuatro reglas.
+La **base voraz** atiende las solicitudes por identificador y escoge la primera sección con cupo que encaje. El **backtracking** conserva ese horario como mejor resultado inicial. Luego ordena las solicitudes por escasez de secciones, prioridad descendente e identificador. En cada nivel prueba un grupo compatible o deja la materia pendiente. Cuando retrocede, deshace la decisión y devuelve el cupo.
 
-**Invariante.** Los horarios parciales contienen exclusivamente solicitudes, a lo sumo una sección por materia, y sesiones compatibles. Para cada grupo, cupo libre = capacidad − estudiantes asignados. El estado vacío cumple el invariante. En la construcción se inserta una solicitud nueva compatible con cupo disponible. Cada reparación añade una solicitud nueva y, si cambia un grupo previo, conserva su materia y actualiza los cupos de los tres grupos afectados. Así se preserva el invariante y cada reparación aceptada aumenta la cobertura en una unidad. El inicio simple reparado conserva o supera el objetivo de la base. Elegir el mejor de los dos candidatos conserva esa propiedad.
+**Poda.** Por cada materia se toma el menor valor entre solicitudes aún por explorar y cupos libres. Esto da una cota de cobertura. Para la cota de prioridad se toman las solicitudes más prioritarias que cabrían en esos cupos. Se descarta una rama cuando esa cota queda por debajo del mejor par de cobertura y prioridad encontrado. En empate se sigue explorando, ya que podrían mejorar las preferencias.
 
-**Complejidad.** Sean R las solicitudes, G los grupos, E los estudiantes, B el máximo de secciones por materia, K las solicitudes por estudiante como máximo, L las sesiones por grupo como máximo y C los compañeros preferidos por estudiante como máximo. Puntuar una propuesta cuesta como máximo M = O(KL log(2+KL) + CK² + K). Un chequeo de dos grupos cuesta O(L²) sin caché. Una cota superior conservadora del método propuesto es O(G log(2+G) + E log(2+E) + R log(2+R) + R·B²·(K·L² + M) + E·M). Los dos inicios son un factor constante. El almacenamiento auxiliar incluye O(G + E + R) para listas, horarios y cupos, además de hasta 100.000 entradas en caché y O(KL) de trabajo por horario. La entrada incluye la matriz de distancias, de tamaño cuadrático en los salones.
+**Presupuesto.** Por defecto se examinan hasta 15.000 nodos. Si se completa el recorrido, se comprueba el óptimo según la terna definida. Si se alcanza el límite, se devuelve la mejor solución encontrada hasta entonces. La ventana muestra el estado y el JSON incluye `busqueda.completa`, `busqueda.nodos` y `busqueda.limite_nodos`. Desde la terminal se puede comparar otro presupuesto con `--limite-nodos`.
 
-**Método exacto para casos pequeños.** Prueba todas las combinaciones posibles, incluida la opción de dejar una materia pendiente. Entre los horarios válidos conserva el que tiene la mejor terna. El número de combinaciones es el producto de (1 + secciones) por solicitud. La búsqueda tiene un límite de 50.000 combinaciones. En [el caso de brecha](casos/brecha.json), el exacto encuentra una solicitud adicional porque puede considerar soluciones que cambian grupos de varios estudiantes.
+**Validez y complejidad.** El horario parcial mantiene las cuatro restricciones y el contador de cupos se restaura al deshacer una decisión. Se utiliza una pila explícita de profundidad a lo sumo igual al número de solicitudes. El árbol crece de forma exponencial en el peor caso. El límite controla cuántos nodos se procesan en la práctica.
+
+**Enumeración exhaustiva.** Es una referencia independiente que evalúa las combinaciones de secciones u omisión, hasta un máximo de 50.000 combinaciones. En [el caso de reasignación](casos/brecha.json), el backtracking y la enumeración alcanzan 3 de 4 solicitudes.
 
 ## Resultados de la entrega
 
-Promedios de tres semillas por escala. Tiempos del solucionador, sin carga de archivos ni verificación externa al método, medidos en Windows, Python 3.14.8 e Intel Core Ultra 7 255U. Las asignaciones y métricas se reproducen con las mismas entradas. Los tiempos varían entre ejecuciones.
+Promedios de tres semillas por tamaño. Los tiempos corresponden al solucionador en Windows, Python 3.14.8 e Intel Core Ultra 7 255U. Excluyen la carga de datos y la verificación final.
 
-| Estudiantes | Cobertura base → propuesta | Prioridad total media base → propuesta | Tiempo medio base → propuesta |
+| Estudiantes | Cobertura base → backtracking | Prioridad total media base → backtracking | Tiempo medio base → backtracking |
 | ---: | ---: | ---: | ---: |
-| 5 | 62,22 % → 62,22 % | 28,00 → 31,00 | 0,05 ms → 0,35 ms |
-| 50 | 57,87 % → 58,27 % | 429,67 → 544,67 | 0,61 ms → 4,87 ms |
-| 500 | 65,87 % → 65,97 % | 5953,00 → 6865,00 | 9,84 ms → 85,55 ms |
+| 5 | 62,22 % → 62,22 % | 28,00 → 33,00 | 0,05 ms → 4,01 ms |
+| 50 | 57,87 % → 58,13 % | 429,67 → 542,67 | 0,26 ms → 499,44 ms |
+| 500 | 65,87 % → 65,87 % | 5953,00 → 5953,00 | 3,62 ms → 48,30 ms |
 
-En cinco de los nueve casos, la propuesta atendió más solicitudes. En otros dos cubrió la misma cantidad y atendió materias de mayor prioridad. Los dos restantes quedaron empatados. En un caso pequeño, esa mejora en prioridad redujo el puntaje de preferencias. Probar dos órdenes y revisar las materias pendientes también tomó más tiempo, como muestra la tabla.
-
-Los resultados corresponden a datos simulados con cupos ajustados y demanda desigual. Para revisar el comportamiento paso a paso están los [casos comprobados a mano](casos/) y sus [salidas esperadas](casos/salidas_esperadas.json).
+El backtracking atendió una solicitud adicional en dos casos medianos, mejoró la prioridad con igual cobertura en cuatro instancias y conservó la terna en las tres grandes. La búsqueda se completó en los tres ejemplos pequeños. En los medianos y grandes llegó al límite de 15.000 nodos. [Resultados por semilla](resultados.json), [casos comprobados a mano](casos/) y [salidas esperadas](casos/salidas_esperadas.json).

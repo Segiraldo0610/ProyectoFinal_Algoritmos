@@ -82,6 +82,7 @@ class DemoTest(unittest.TestCase):
                 self.assertEqual(len(list(Path(temp).glob("*/*.csv"))), 11)
                 app.boton_asignar.invoke()
                 self.assertEqual(app.kpi_cobertura.get(), "66,7 %")
+                self.assertIn("Óptimo comprobado", app.estado.get())
                 self.assertGreater(len(app.tabla_agenda.get_children()), 0)
                 app.estudiante.set("E005")
                 app.mostrar_estudiante()

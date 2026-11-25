@@ -11,14 +11,14 @@ Base: sección 4.2 del enunciado 2026-30 y formalización de la primera entrega.
 
 ## Diseño elegido
 
-El proyecto usa Python 3.10 o posterior. La ventana permite generar y revisar los CSV, asignar grupos y verificar el horario. La terminal permite repetir la evaluación de los nueve escenarios. El método propuesto parte de dos horarios y prueba cambiar una sección del mismo estudiante para atender una materia que quedó pendiente. Conserva el mejor intento. Para los casos pequeños se pueden probar todas las combinaciones y ver cuál da el mejor resultado.
+El proyecto usa Python 3.10 o posterior. La ventana permite generar y revisar los CSV, asignar grupos y verificar el horario. La terminal permite repetir la evaluación de los nueve escenarios. El método propuesto usa backtracking con poda. Parte de la solución voraz y explora decisiones de grupo u omisión, restituyendo los cupos al retroceder. Informa si se agotó la búsqueda o si se alcanzó el límite de nodos. Para los casos pequeños, la enumeración exhaustiva permite comprobar su resultado.
 
-El orden de evaluación es lexicográfico: número de solicitudes cubiertas, suma de prioridades satisfechas y puntaje de preferencias. El método escalable es heurístico y el oráculo permite medir su brecha frente al óptimo de casos concretos.
+El orden de evaluación es lexicográfico: número de solicitudes cubiertas, suma de prioridades satisfechas y puntaje de preferencias. Con búsqueda completa, la poda comprueba el óptimo. Con límite alcanzado, se conserva la mejor asignación encontrada.
 
 ## Ejecución
 
 - [x] Modelo de entrada, verificador independiente y métricas. Probar solapamientos parciales, colindancia, cupos, duplicados y preferencias.
-- [x] Voraz simple, heurística y enumeración exacta. Probar una reparación y una brecha frente al óptimo.
+- [x] Voraz simple, backtracking con poda y enumeración exacta. Probar cambios de sección y reasignaciones entre estudiantes.
 - [x] Generador por semilla. Comparar los resultados con la línea base en los escenarios de 5, 50 y 500 estudiantes.
 - [x] Ventana para la sustentación. Mostrar los CSV, las materias pendientes y el resultado de la verificación.
 - [x] Documentar trazabilidad, corrección, complejidad y resultados. Preparar una demo reproducible y preguntas de sustentación.
