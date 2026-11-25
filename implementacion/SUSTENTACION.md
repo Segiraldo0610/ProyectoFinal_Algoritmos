@@ -6,7 +6,7 @@ Esta guía sirve para ensayar la sustentación individual. La idea es empezar co
 
 ## Ruta sin consola
 
-Abre la ventana con los [pasos del README](../README.md#cómo-abrirlo-en-pycharm).
+Abre la ventana con los [pasos del README](../README.md#ejecución-en-pycharm).
 Elige **Pequeño**, deja la semilla 202630 y pulsa **Generar CSV**. En **Datos CSV**,
 sigue la solicitud de A01 de E001 desde `solicitudes.csv` hasta su grupo en
 `grupos.csv` y su sesión en `horarios.csv`.

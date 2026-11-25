@@ -4,9 +4,9 @@
 **Cesar Santiago Canro Cabra y Samuel Enrique Giraldo Sabogal**  
 Pontificia Universidad Javeriana · Departamento de Ingeniería de Sistemas
 
-Cada estudiante pide unas materias y el programa elige los grupos que le caben en el horario. La salida guarda los grupos asignados, las materias que quedaron pendientes y los datos para comparar horarios. La interfaz y la terminal usan el mismo algoritmo.
+La implementación asigna secciones de las materias solicitadas, con sujeción a los cupos y a la compatibilidad de las franjas. Para cada estudiante, la salida registra las secciones asignadas, las solicitudes pendientes y las métricas de cobertura y preferencias. Tanto la interfaz gráfica como los comandos de terminal utilizan el mismo algoritmo y el mismo verificador.
 
-Para abrir la ventana, sigue los [pasos de PyCharm](../README.md#cómo-abrirlo-en-pycharm). El [guion de sustentación](SUSTENTACION.md) tiene un ejemplo que se puede explicar a mano.
+El [informe final](../docs/entrega-final/main.tex) presenta el modelo, el análisis de correctitud y la evaluación experimental. El [README principal](../README.md#ejecución-en-pycharm) describe cómo ejecutar la interfaz en PyCharm. El [guion de sustentación](SUSTENTACION.md) incluye un caso de reparación que se puede comprobar a mano.
 
 ## Correr las pruebas y los ejemplos
 

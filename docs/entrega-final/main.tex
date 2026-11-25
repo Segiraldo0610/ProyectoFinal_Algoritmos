@@ -1,0 +1,635 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[spanish,es-nodecimaldot]{babel}
+\usepackage{amsmath,amssymb}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{microtype}
+\usepackage{booktabs,tabularx,float}
+\usepackage[hidelinks]{hyperref}
+
+\setcounter{tocdepth}{1}
+\numberwithin{table}{section}
+\newcommand{\repo}{\href{https://github.com/Segiraldo0610/ProyectoFinal_Algoritmos}{ProyectoFinal\_Algoritmos}}
+\newcommand{\materia}{\operatorname{asignatura}}
+\newcommand{\cupo}{\operatorname{capacidad}}
+\newcommand{\horario}{\operatorname{horario}}
+
+\title{Algoritmo de asignación de horarios estudiantiles\\[0.35em]
+\large Entrega final de Análisis de Algoritmos}
+\author{Cesar Santiago Canro Cabra \and Samuel Enrique Giraldo Sabogal}
+\date{Pontificia Universidad Javeriana\\
+Departamento de Ingeniería de Sistemas\\[0.4em]
+Proyecto 2026--30}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Se presenta la implementación de un algoritmo para asignar horarios
+estudiantiles a partir de solicitudes, grupos y cupos. La solución construye
+dos asignaciones iniciales, revisa las solicitudes que quedaron pendientes
+e intenta incorporarlas mediante cambios de sección. Un verificador
+independiente comprueba el cumplimiento de las restricciones. La estrategia
+de datos utiliza archivos CSV enlazados por identificadores y permite
+reproducir los experimentos a partir de una semilla. La evaluación compara
+los resultados con una línea base voraz en nueve instancias sintéticas y
+con una búsqueda exhaustiva en casos pequeños. La interfaz de escritorio
+permite consultar los datos, ejecutar la asignación y revisar sus resultados
+durante la sustentación.
+\end{abstract}
+
+\tableofcontents
+\clearpage
+
+\part{Análisis y diseño}
+
+\section{Análisis del problema}
+
+La asignación de horarios consiste en seleccionar, para cada estudiante,
+los grupos correspondientes a las asignaturas que solicita. Una sección
+puede tener varias sesiones durante la semana, y dos estudiantes pueden
+competir por el mismo cupo. La decisión de asignar un grupo afecta tanto
+las franjas disponibles del estudiante como los cupos que podrán utilizar
+los demás.
+
+Se distinguen las restricciones de validez y los criterios de calidad.
+Un horario debe respetar los cupos, evitar cruces y contener a lo sumo un
+grupo de cada asignatura solicitada. Entre los horarios válidos interesa
+atender tantas solicitudes como sea posible, dar prioridad a las materias
+consideradas más importantes y tener en cuenta las preferencias de cada
+estudiante. Los criterios de calidad incluyen la franja deseada, la
+compactación del horario, la distancia entre salones, la preferencia por
+profesor y la coincidencia con compañeros.
+
+En algunas instancias, el número de cupos o la combinación de franjas impide
+atender todas las solicitudes. En ese caso, la salida conserva las
+asignaciones válidas e identifica las materias pendientes.
+
+\section{Diseño formal}
+
+\subsection{Entrada y precondiciones}
+
+Sean \(E\) el conjunto de estudiantes, \(A\) el catálogo de asignaturas,
+\(G\) el conjunto de grupos, \(P\) el catálogo de profesores y \(S\) el
+conjunto de salones. Para un estudiante \(e\in E\), \(R_e\subseteq A\)
+contiene las asignaturas que solicita. Cada par \((e,a)\) con \(a\in R_e\)
+tiene una prioridad entera positiva \(\pi(e,a)\).
+
+Cada grupo \(g\in G\) tiene una asignatura \(\materia(g)\in A\), un profesor
+en \(P\), un salón en \(S\), un cupo \(\cupo(g)>0\) y un conjunto no vacío
+de sesiones \(\horario(g)\). Cada sesión se representa por una terna
+\(f=(d,i,j)\), donde \(d\in\{1,\ldots,5\}\) indica el día y
+\(0\le i<j\le 1440\) son minutos desde la medianoche. Los intervalos son
+semiabiertos. Para \(f=(d,i,j)\) y \(f'=(d',i',j')\), se define
+\[
+  \operatorname{cruce}(f,f')\iff d=d'\ \land\ i<j'\ \land\ i'<j .
+\]
+Así, una clase que termina a las 09:00 puede preceder a otra que comienza a
+esa misma hora. Un grupo tiene el mismo salón y profesor para sus sesiones.
+
+Las preferencias expresan una ventana de horas, días libres deseados, una
+indicación de compactación, valoraciones por profesor entre 0 y 5 y una
+lista de compañeros preferidos. La distancia entre dos salones se registra
+en metros. La matriz de distancias tiene valores enteros no negativos,
+es simétrica y su diagonal es cero. La carga exige identificadores únicos
+en sus catálogos, referencias existentes y al menos una solicitud por
+estudiante. La oferta puede carecer de secciones para una asignatura del
+catálogo.
+
+\subsection{Salida y postcondiciones}
+
+La salida es una función \(H:E\longrightarrow 2^G\). El conjunto \(H(e)\)
+contiene los grupos asignados a \(e\) y puede ser vacío. Se exige que \(H\)
+cumpla las siguientes condiciones.
+
+\begin{enumerate}
+  \item \textbf{Solicitud.} Para cada \(e\) y cada \(g\in H(e)\),
+        \(\materia(g)\in R_e\).
+  \item \textbf{Unicidad.} Para cada \(e\), dos grupos distintos de
+        \(H(e)\) corresponden a asignaturas diferentes.
+  \item \textbf{Compatibilidad.} Para cada \(e\), las sesiones de dos
+        grupos distintos de \(H(e)\) no se cruzan.
+  \item \textbf{Cupo.} Para cada \(g\in G\),
+        \(\left|\{e\in E:g\in H(e)\}\right|\le \cupo(g)\).
+\end{enumerate}
+
+Las materias pendientes de \(e\) son
+\(R_e\setminus\{\materia(g):g\in H(e)\}\).
+La cobertura individual es \(|H(e)|/|R_e|\) y la cobertura global es
+\(\sum_{e\in E}|H(e)|/\sum_{e\in E}|R_e|\). La condición de unicidad
+permite contar solicitudes cubiertas mediante el número de grupos.
+
+\subsection{Criterio de comparación}
+
+Las asignaciones válidas se comparan en orden lexicográfico mediante
+\[
+  F(H)=\bigl(N(H),W(H),Q(H)\bigr), \qquad
+  N(H)=\sum_{e\in E}|H(e)|,\qquad
+  W(H)=\sum_{e\in E}\ \sum_{g\in H(e)} \pi(e,\materia(g)).
+\]
+Se compara primero la cantidad de solicitudes atendidas. Si hay empate,
+se compara la suma de prioridades. El puntaje de preferencias \(Q\)
+decide cuando los dos primeros componentes coinciden.
+
+El puntaje \(Q\) es la suma de puntajes individuales. Para cada estudiante
+se suman 60 puntos por unidad de preferencia de profesor asignado y 120 por
+cada coincidencia dirigida de compañero y grupo. Se resta un punto por
+minuto de clase fuera de la ventana deseada y 120 por cada sesión en un
+día libre preferido. Si el estudiante prefiere un horario compacto, se
+resta un punto por minuto de hueco. También se descuenta la parte entera
+de la distancia total recorrida dividida entre diez. Los huecos y
+desplazamientos se calculan entre sesiones consecutivas del mismo día.
+
+
+\part{Estrategia de datos}
+
+\section{Formato de almacenamiento CSV}
+\label{sec:csv}
+
+Cada instancia se almacena en una carpeta con once archivos CSV. Una fila
+representa una entidad o una relación. Por ejemplo, si un grupo se reúne
+dos días, sus datos fijos se escriben una sola vez en \texttt{grupos.csv}
+y las dos sesiones se escriben como filas en \texttt{horarios.csv}.
+Así se pueden añadir sesiones o solicitudes sin modificar el encabezado
+ni repetir el cupo, el profesor o el salón de un grupo.
+
+\subsection{Convenciones y diccionario de datos}
+
+Todos los CSV tienen encabezado obligatorio, columnas en el orden documentado,
+separador coma y codificación UTF-8. Las columnas de un registro deben estar
+completas. Los identificadores se tratan como texto y deben conservarse
+al importar o editar los archivos. Los campos numéricos son enteros decimales
+sin relleno con ceros. Las horas se expresan en minutos desde medianoche
+(\texttt{480} equivale a 08:00). Los días van de 1 (lunes) a 5 (viernes).
+Las métricas y los grupos asignados se guardan como salida JSON en una ruta
+separada de las entradas.
+
+\begin{table}[H]
+\centering
+\caption{Catálogos y entidades principales del esquema CSV.}
+\small
+\begin{tabular}{@{}p{0.27\linewidth}p{0.69\linewidth}@{}}
+\toprule
+\textbf{Archivo} & \textbf{Columnas en orden y clave primaria} \\
+\midrule
+\texttt{asignaturas.csv} &
+\texttt{asignatura\_id}. Clave: asignatura. \\
+\texttt{profesores.csv} &
+\texttt{profesor\_id}. Clave: profesor. \\
+\texttt{salones.csv} &
+\texttt{salon\_id}. Clave: salón. \\
+\texttt{estudiantes.csv} &
+\texttt{estudiante\_id, inicio\_min, fin\_max, compacto}.\newline
+Clave: estudiante. \texttt{compacto} vale 0 o 1. \\
+\texttt{grupos.csv} &
+\texttt{grupo\_id, asignatura\_id, profesor\_id,}\newline
+\texttt{salon\_id, capacidad}. Clave: grupo. Asignatura,
+profesor y salón deben existir en sus catálogos. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Sesiones, solicitudes, preferencias y distancias.}
+\small
+\begin{tabular}{@{}p{0.27\linewidth}p{0.69\linewidth}@{}}
+\toprule
+\textbf{Archivo} & \textbf{Columnas en orden y clave primaria} \\
+\midrule
+\texttt{horarios.csv} &
+\texttt{grupo\_id, dia, inicio, fin}. Clave: los cuatro campos.
+El grupo debe existir en \texttt{grupos.csv}. \\
+\texttt{solicitudes.csv} &
+\texttt{estudiante\_id, asignatura\_id, prioridad}. Clave:
+(estudiante, asignatura). Ambos identificadores deben existir. \\
+\texttt{preferencias\_}\newline\texttt{profesor.csv} &
+\texttt{estudiante\_id, profesor\_id, valor}. Clave:
+(estudiante, profesor). Valor entre 0 y 5. \\
+\texttt{dias\_libres.csv} &
+\texttt{estudiante\_id, dia}. Clave: (estudiante, día). \\
+\texttt{companeros.csv} &
+\texttt{estudiante\_id, companero\_id}. Clave: (estudiante,
+compañero). Ambos son estudiantes distintos. La relación es dirigida. \\
+\texttt{distancias.csv} &
+\texttt{origen\_id, destino\_id, metros}. Clave: (origen, destino).
+Se registra cada par ordenado de salones, incluida la diagonal. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Las tablas de preferencias por profesor, días libres y compañeros pueden
+contener solo el encabezado. La ausencia de una fila indica que no se
+informó esa preferencia. Si un estudiante no define límites de hora, la
+exportación registra \texttt{inicio\_min=0}, \texttt{fin\_max=1440}.
+Cada estudiante tiene al menos una solicitud y cada grupo al menos una
+sesión. Una asignatura puede estar en el catálogo y en una solicitud aunque
+carezca de grupos. Esa solicitud podrá quedar pendiente.
+
+\subsection{Ejemplo de filas enlazadas}
+
+Estos fragmentos muestran cómo se reconstruye una parte de la instancia.
+El estudiante \texttt{E001} solicita \texttt{A01} con prioridad 5.
+El grupo \texttt{A01-G1} pertenece a esa asignatura, admite 12 estudiantes y
+ocupa dos sesiones en el mismo salón. El lector reúne las dos franjas bajo
+el mismo identificador.
+
+\begin{verbatim}
+estudiantes.csv
+estudiante_id,inicio_min,fin_max,compacto
+E001,480,1080,1
+
+solicitudes.csv
+estudiante_id,asignatura_id,prioridad
+E001,A01,5
+
+grupos.csv
+grupo_id,asignatura_id,profesor_id,salon_id,capacidad
+A01-G1,A01,P01,S01,12
+
+horarios.csv
+grupo_id,dia,inicio,fin
+A01-G1,1,480,570
+A01-G1,3,480,570
+\end{verbatim}
+
+Los catálogos deben contener \texttt{A01}, \texttt{P01} y \texttt{S01}.
+Si la instancia solo tiene el salón \texttt{S01}, \texttt{distancias.csv}
+contiene el encabezado \texttt{origen\_id,destino\_id,metros} y la fila
+\texttt{S01,S01,0}.
+
+\subsection{Creación, carga y mantenimiento}
+
+\begin{enumerate}
+  \item Crear los catálogos con identificadores estables. Para una fuente
+        real, convertir horarios a minutos y reemplazar identificadores
+        personales por códigos de la instancia antes de guardar.
+  \item Crear los grupos con referencias a los catálogos y registrar sus
+        franjas en filas separadas. Crear estudiantes, solicitudes y
+        preferencias usando esos mismos identificadores.
+  \item Ordenar las filas por clave y escribir los once CSV en una carpeta
+        nueva. Para datos sintéticos, registrar semilla, escenario, versión
+        del esquema y versión de Python en \texttt{meta.json}.
+  \item Leer primero los catálogos y estudiantes. Comprobar después las
+        referencias al cargar grupos, sesiones, solicitudes, preferencias
+        y distancias. Reconstruir una lista de sesiones por grupo y un
+        conjunto de solicitudes y preferencias por estudiante.
+  \item Validar la instancia reconstruida antes de asignar. Al corregir o
+        regenerar una instancia, guardar el conjunto como otra carpeta.
+        Así se conservan los datos usados en las mediciones anteriores.
+\end{enumerate}
+
+La interfaz permite generar la carpeta mediante \textbf{Generar CSV},
+abrirla mediante \textbf{Abrir carpeta CSV} y revisar cada archivo en la
+pestaña \textbf{Datos CSV}. Para automatizar las pruebas, se puede reproducir
+el mismo flujo desde la carpeta \texttt{implementacion}.
+
+\begin{verbatim}
+python horarios.py generar pequeno ejemplo --formato csv --semilla 202630
+python horarios.py resolver ejemplo resultado.json
+python horarios.py verificar ejemplo resultado.json
+\end{verbatim}
+
+\section{Generación de datos sintéticos}
+
+La instancia se genera con una semilla explícita para que el mismo escenario,
+semilla y versión del generador y de Python produzcan los mismos datos. Cada
+escenario fija el número de estudiantes, asignaturas, grupos por asignatura,
+profesores, salones y solicitudes por estudiante. El generador realiza estos
+pasos:
+
+\begin{enumerate}
+  \item Crear identificadores de los catálogos. Para los salones se generan
+        coordenadas simuladas y se toma la suma de las diferencias absolutas
+        por eje. La matriz resultante es simétrica y tiene diagonal cero.
+  \item Crear las secciones. Las clases empiezan entre 08:00 y 16:00 en
+        pasos de 30 minutos y duran 60, 90 o 120 minutos. Cada sección tiene
+        una o dos sesiones en días distintos. Se usan los mismos profesor
+        y salón para sus sesiones.
+  \item Parametrizar los cupos. Si $R$ es el número total de solicitudes y
+        $|G|$ el número de grupos, el cupo base es
+        $b=\max(1,\lfloor 0{,}8R/|G|\rfloor)$. El cupo de cada sección
+        varía hasta $\lfloor b/3\rfloor$ alrededor de $b$, con mínimo 1.
+        Así se puede observar competencia por cupos.
+  \item Seleccionar materias sin reemplazo para cada estudiante. Se
+        asignan pesos descendentes a los códigos de materia para simular
+        demanda desigual. Las prioridades sintéticas van de 1 a 5. Se
+        generan valoraciones de profesores, límites de hora, compactación,
+        días libres y hasta tres compañeros distintos por estudiante.
+\end{enumerate}
+
+La oferta sintética se trata como entrada fija del problema estudiantil.
+Para evaluar una situación real se propone recuperar la oferta disponible,
+obtener preferencias voluntarias y usar distancias medidas o declaradas con su
+procedencia. Los experimentos de esta entrega emplean datos sintéticos y
+los casos manuales de referencia.
+
+\section{Escenarios de prueba y salidas esperadas}
+
+\begin{table}[H]
+\centering
+\caption{Escalas del generador. Se ejecutan las semillas 202630, 202631 y 202632.}
+\small
+\begin{tabular}{lrrrrrr}
+\toprule
+Escenario & Estudiantes & Materias & Grupos & Profesores & Salones & Solicitudes \\
+\midrule
+Pequeño & 5 & 5 & 10 & 3 & 3 & 15 \\
+Mediano & 50 & 15 & 45 & 12 & 10 & 250 \\
+Grande & 500 & 30 & 120 & 30 & 20 & 3000 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+El escenario pequeño permite inspeccionar a mano la estructura CSV y revisar
+asignaciones concretas. En el mediano se compara la cobertura y la prioridad
+atendida sobre las mismas entradas. En el grande se registra además el tiempo
+del solucionador. En las tres escalas se comprueba la validez de cada salida
+y se conservan las métricas por semilla para reproducir la comparación.
+
+\begin{table}[H]
+\centering
+\caption{Casos de referencia con resultados comprobables.}
+\small
+\begin{tabular}{@{}p{0.23\linewidth}p{0.35\linewidth}p{0.38\linewidth}@{}}
+\toprule
+\textbf{Caso} & \textbf{Configuración} & \textbf{Comprobación esperada} \\
+\midrule
+Reparación & Una sección de A bloquea ambas opciones de B.
+La alternativa de A deja espacio para B. &
+Es posible cubrir 2 de 2 solicitudes. Cambiar la sección conserva A. \\
+Cupo compartido & Dos estudiantes solicitan la misma asignatura.
+Hay una sola sección de cupo 1. &
+Máximo de 1 de 2 solicitudes. Entre salidas de igual cobertura,
+la referencia atiende prioridad 5. \\
+Brecha & Dos estudiantes y una asignatura sin oferta.
+Para cubrir tres solicitudes se debe mover al primer estudiante. &
+Máximo de 3 de 4 solicitudes. La heurística local puede quedarse en 2. \\
+Límite temporal & Dos sesiones del mismo día terminan y empiezan a la
+misma hora. Se prueba también un intervalo que invade la otra sesión. &
+Se permite la colindancia. Se rechaza la asignación con cruce. \\
+CSV inconsistente & Encabezado incorrecto, clave repetida, ID ausente,
+franja invertida o distancia sin registrar. &
+Se rechaza la entrada antes de construir la asignación. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Las salidas esperadas de los tres primeros casos se conservan en
+\texttt{salidas\_esperadas.json}. Se contrastan con un oráculo exhaustivo
+cuando el número de combinaciones es pequeño. Una referencia se puede construir
+sembrando primero una asignación válida y verificando después sus cupos y
+franjas. Pueden existir horarios distintos con el mismo valor, por lo que se
+compara la validez y los valores de referencia. En instancias mayores se usa
+la misma entrada para la línea base y el método propuesto.
+
+\section{Estrategia de validación}
+
+\begin{enumerate}
+  \item \textbf{Estructura e integridad de los CSV.} Revisar encabezados,
+        número de columnas, valores requeridos, unicidad de claves y
+        existencia de referencias. Cuando el error corresponde a una fila, se informa el archivo
+        y la línea. Los errores que abarcan varias filas, como una
+        matriz de distancias incompleta, se detectan al reconstruir la
+        instancia.
+  \item \textbf{Dominios y coherencia de la entrada.} Comprobar cupos
+        positivos, horarios dentro del dominio, hora de inicio menor que
+        la de fin, sesiones de cada grupo sin cruces y matriz de distancias
+        completa, simétrica y no negativa, con diagonal cero.
+  \item \textbf{Validez de $H$.} Un verificador independiente revisa que
+        todos los estudiantes aparezcan en la salida. Después comprueba
+        las cuatro postcondiciones mediante la agenda reconstruida,
+        las solicitudes y el conteo de cupos. Una asignación parcial puede
+        ser válida y las materias sin asignar se reportan como pendientes.
+  \item \textbf{Calidad de $H$.} Recalcular cobertura, prioridades, huecos,
+        distancias, preferencias de profesor y coincidencias. Comparar
+        con casos de referencia o con la línea base según la escala.
+        Registrar el tiempo de resolución por separado del tiempo de carga
+        del CSV.
+\end{enumerate}
+
+\clearpage
+\part{Implementación y resultados}
+
+\section{Algoritmo de asignación}
+
+La implementación está escrita en Python. El lector CSV transforma las
+tablas en una instancia del problema. El algoritmo recibe esta estructura
+y produce \(H\). El verificador comprueba la salida y las métricas se
+calculan a partir de los grupos asignados. La interfaz de escritorio llama
+a las mismas funciones que utiliza la ejecución por terminal.
+
+\subsection{Construcción inicial}
+
+La línea base visita las solicitudes en orden de identificador de
+estudiante y asignatura. Para cada solicitud toma la primera sección
+compatible que tenga cupo. Si no encuentra una sección, deja la solicitud
+pendiente.
+
+La propuesta construye dos candidatos. El primero arranca en el mismo
+orden que la línea base. El segundo atiende primero las asignaturas con
+menos secciones disponibles en la oferta. Los empates se resuelven por
+prioridad descendente, por menor cantidad total de secciones para las
+materias solicitadas por el estudiante y, finalmente, por identificador.
+En este segundo candidato, cada grupo elegible se evalúa según el puntaje
+individual que dejaría en ese momento.
+
+\subsection{Reparación local y elección del candidato}
+
+En cada candidato se recorre una vez la lista de solicitudes pendientes.
+Para una solicitud de \(e\), se consideran las secciones de esa materia
+con cupo libre. Si una sección encaja de manera directa, se puede añadir.
+Si se cruza con un solo grupo que ya tiene \(e\), se busca otra sección
+de la materia de ese grupo que tenga cupo y que sea compatible con el
+resto del horario y con la sección nueva. Una reparación conserva la
+materia que ya se había asignado y agrega la solicitud pendiente.
+
+Si existen varias reparaciones elegibles, se elige la de mayor puntaje
+individual. Se actualiza el horario junto con los cupos afectados. Tras
+reparar ambos candidatos, se devuelve el que obtenga la mayor terna
+\(F(H)\).
+
+\subsection{Correctitud y terminación}
+
+Se mantiene el siguiente invariante. Todos los horarios parciales
+satisfacen las cuatro postcondiciones y, para cada grupo, el cupo libre
+almacenado es su capacidad menos el número de estudiantes asignados.
+
+\begin{itemize}
+  \item \textbf{Inicialización.} Los horarios están vacíos y cada grupo
+        comienza con todos sus cupos libres. Se cumplen las restricciones.
+  \item \textbf{Construcción.} La solicitud que se procesa pertenece al
+        estudiante y se visita una sola vez. La sección elegida corresponde
+        a su materia, tiene cupo y es compatible con los grupos previos.
+        Se añade la sección y se descuenta un cupo.
+  \item \textbf{Reparación.} La materia nueva estaba pendiente. Si se
+        cambia una sección previa, se conserva su materia y se verifican
+        la compatibilidad de los grupos nuevos y sus cupos antes de aceptar
+        el cambio. Se devuelve el cupo de la sección retirada y se
+        descuentan los de las secciones incorporadas.
+\end{itemize}
+
+Cada recorrido considera una lista finita de solicitudes y cada intento
+examina un conjunto finito de secciones. La reparación añade una solicitud
+o deja el candidato igual. Como uno de los candidatos comienza con la
+misma asignación que produce la base, elegir el mejor de los dos tras la
+reparación conserva o mejora su terna. Esta propiedad garantiza un
+resultado al menos tan bueno como la base bajo el criterio definido. La
+búsqueda local puede dejar sin atender una solicitud que exigiría cambiar
+el horario de otro estudiante.
+
+\subsection{Complejidad}
+
+Sean \(R\) el número total de solicitudes, \(K\) el máximo de solicitudes
+de un estudiante, \(B\) el máximo de secciones de una asignatura,
+\(L\) el máximo de sesiones de un grupo y \(C\) el máximo de compañeros
+preferidos. Comparar dos grupos por sus sesiones toma \(O(L^2)\)
+cuando el par no está en caché. Sea \(M\) el costo de puntuar un horario
+individual. Una cota conservadora es
+\(M=O(KL\log(2+KL)+CK^2+K\log(2+K))\). Esta cota incluye ordenar
+las sesiones, consultar las coincidencias y construir las métricas.
+
+La construcción evalúa hasta \(B\) opciones por solicitud. En la reparación
+se pueden probar hasta \(B\) secciones nuevas y hasta \(B\) sustituciones
+para cada una. Una cota temporal del método propuesto es
+\begin{multline*}
+ O\bigl(|G|\log(2+|G|)+|E|\log(2+|E|)+R\log(2+R)\\
+       {}+ R(1+B)^2(KL^2+M)+|E|M\bigr).
+\end{multline*}
+La cota usa el costo de comparación sin caché. El código conserva hasta
+100\,000 pares de grupos ya comparados. Los dos candidatos y sus listas
+de solicitudes ocupan \(O(R+|E|+|G|)\) espacio auxiliar, además de la
+caché y el espacio de trabajo para las métricas. La matriz de distancias
+es parte de la entrada y ocupa \(O(|S|^2)\).
+
+\subsection{Referencia exacta para casos pequeños}
+
+La búsqueda exhaustiva enumera una sección o la omisión para cada
+solicitud. Descarta las combinaciones inválidas y conserva la mejor terna.
+Si \(b_r\) es la cantidad de secciones de la solicitud \(r\), el número de
+combinaciones es \(\prod_{r=1}^{R}(1+b_r)\). La implementación limita
+esta búsqueda a 50\,000 combinaciones y la utiliza para comprobar casos
+pequeños.
+
+\section{Verificación y evaluación experimental}
+
+El verificador reconstruye los cupos ocupados y ordena las sesiones por
+estudiante para detectar cruces. También revisa que la salida incluya
+exactamente a los estudiantes de la entrada, que las secciones existan
+y que correspondan a solicitudes sin repetir materias. Este procedimiento
+lee la asignación final y calcula la validez sin depender del estado interno
+de cupos del solucionador.
+
+\subsection{Casos de referencia}
+
+Los casos de referencia permiten comprobar el resultado en situaciones que
+se pueden resolver a mano. La tabla compara la cantidad de solicitudes
+atendidas para cada método.
+
+\begin{table}[H]
+\centering
+\caption{Solicitudes atendidas en los casos de referencia.}
+\begin{tabular}{lccc}
+\toprule
+Caso & Base voraz & Propuesto & Exacto \\
+\midrule
+Reparación & 1 de 2 & 2 de 2 & 2 de 2 \\
+Cupo compartido & 1 de 2 & 1 de 2 & 1 de 2 \\
+Brecha frente al exacto & 2 de 4 & 2 de 4 & 3 de 4 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+En el caso de reparación, A1 ocupa el lunes de 08:00 a 09:00 y bloquea las
+dos opciones de B. A2, de 09:00 a 10:00, ofrece una alternativa para la misma
+materia. El método propuesto sustituye A1 por A2 y asigna B1. En el caso
+de cupo compartido, la base atiende una solicitud de prioridad 1 y la
+propuesta atiende una de prioridad 5 con la misma cobertura. En el caso
+de brecha, cambiar la sección de un estudiante permite liberar un cupo
+para otro. La búsqueda exacta encuentra esa combinación y atiende una
+solicitud adicional.
+
+\subsection{Resultados por tamaño}
+
+Cada valor de la tabla es el promedio de tres instancias generadas con las
+semillas 202630, 202631 y 202632. Para cada instancia se usaron los mismos
+datos con ambos métodos. El tiempo corresponde a la ejecución del
+solucionador, sin incluir la lectura de archivos ni la validación externa.
+Las mediciones se registraron en Windows con Python 3.14.8 y un procesador
+Intel Core Ultra 7 255U.
+
+\begin{table}[H]
+\centering
+\caption{Promedios de cobertura, prioridad atendida y tiempo de resolución.}
+\small
+\begin{tabular}{r rrr rrr}
+\toprule
+ & \multicolumn{3}{c}{Base voraz} & \multicolumn{3}{c}{Propuesto} \\
+\cmidrule(lr){2-4}\cmidrule(lr){5-7}
+Estudiantes & Cobertura & Prioridad & Tiempo & Cobertura & Prioridad & Tiempo \\
+\midrule
+5   & 62,22\% & 28,00   & 0,05 ms & 62,22\% & 31,00   & 0,35 ms \\
+50  & 57,87\% & 429,67  & 0,61 ms & 58,27\% & 544,67  & 4,87 ms \\
+500 & 65,87\% & 5953,00 & 9,84 ms & 65,97\% & 6865,00 & 85,55 ms \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+En cinco instancias la propuesta atendió más solicitudes. En otras dos
+mantuvo la cobertura y aumentó la prioridad atendida. En las dos restantes
+se obtuvo la misma terna. En una instancia pequeña, la mejora en prioridad
+vino acompañada de un puntaje de preferencias menor. Este resultado refleja
+el orden de comparación adoptado. Construir dos candidatos y revisar las
+solicitudes pendientes aumentó el tiempo de resolución. Los resultados
+corresponden a instancias sintéticas de demanda desigual y cupos ajustados.
+
+Los resultados por semilla y los casos de referencia se encuentran en el
+repositorio \repo. La implementación incluye 20 pruebas automatizadas
+que cubren la lectura de CSV, el verificador, los casos de referencia y
+el flujo de la interfaz.
+
+\section{Ejecución para la sustentación}
+
+La interfaz utiliza Python 3.10 o posterior con Tkinter. En PyCharm, se
+abre la carpeta completa del repositorio \repo, se selecciona un
+intérprete local y se ejecuta \texttt{implementacion/interfaz.py}
+mediante \textbf{Run 'interfaz'}. En Windows también se puede abrir
+\texttt{Abrir interfaz.pyw} con doble clic. La ventana carga el ejemplo
+CSV al iniciar.
+
+\begin{enumerate}
+  \item Seleccionar el escenario pequeño, dejar la semilla 202630 y pulsar
+        \textbf{Generar CSV}. En \textbf{Datos CSV}, seguir la solicitud de
+        A01 de E001 desde \texttt{solicitudes.csv} hasta un grupo en
+        \texttt{grupos.csv} y sus sesiones en \texttt{horarios.csv}.
+  \item Pulsar \textbf{Asignar horarios}. Para esa entrada, el método
+        propuesto atiende 10 de 15 solicitudes. Seleccionar E005 para
+        mostrar su horario y la materia A04 pendiente.
+  \item Pulsar \textbf{Verificar resultado} para mostrar el cumplimiento
+        de las cuatro restricciones. El botón \textbf{Guardar resultado
+        JSON} permite conservar la asignación y las métricas.
+  \item Abrir el caso \textbf{Reparación} en \textbf{Casos para la
+        sustentación} y comparar el método base con el propuesto.
+        El caso \textbf{Brecha frente al exacto} sirve para mostrar
+        una limitación de la búsqueda local.
+\end{enumerate}
+
+\section{Conclusiones}
+
+La estrategia de almacenamiento permite seguir una solicitud desde el
+estudiante hasta las secciones disponibles y sus sesiones. Los CSV se
+pueden generar de manera reproducible y sus relaciones se validan antes de
+hacer la asignación.
+
+El método propuesto mejora la cobertura o la prioridad atendida en siete
+de las nueve instancias frente a la base. La ganancia en cobertura es
+pequeña en los escenarios de mayor tamaño y se obtiene a cambio de mayor
+tiempo de resolución. En los casos manuales, la búsqueda exacta muestra
+cuándo una modificación individual es suficiente y cuándo conviene
+considerar cambios entre estudiantes. La interfaz permite observar esas
+diferencias a partir de los datos y de las asignaciones que produce el
+algoritmo.
+
+\end{document}
